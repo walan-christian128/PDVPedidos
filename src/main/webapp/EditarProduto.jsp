@@ -30,7 +30,7 @@ lista = dao.listaFornecedores();
 
 <%@ include file="menu.jsp"%>
 <div class="container mt-4">
-    <form name="editar" action="update" method="post" enctype="multipart/form-data">
+    <form name="editar" action="updateProduto" method="post" enctype="multipart/form-data">
         <h2>Editar Produto</h2>
         <div class="mb-3">
             <label for="id" class="form-label">Código do Produto:</label>

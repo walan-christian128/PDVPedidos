@@ -5,6 +5,9 @@
 <%@ page import="Model.Produtos" %>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="java.util.List"%>
+<%@ page import="java.util.Locale" %>
+
+
 
 <%
 String empresa = (String) session.getAttribute("empresa");
@@ -37,6 +40,30 @@ td a {
     color: inherit;
     cursor: pointer;
 }
+ .modal-content {
+        background-color: #1e1e1e;
+        color: white;
+    }
+
+    .modal-header, .modal-footer {
+        border-color: #444;
+    }
+
+    .btn-dark {
+        background-color: #5c16c5;
+        border: none;
+    }
+
+    .btn-dark:hover {
+        background-color: #3e0e90;
+    }
+    
+    #subtotalCarrinho {
+        background-color: #212529;
+        color: #fff;
+        font-weight: bold;
+        text-align: right;
+    }
 </style>
 </head>
 
@@ -67,12 +94,11 @@ td a {
                                 onclick="aumentarQuantidade(<%=produto.getId()%>)">+</button>
                     </div>
 
-                    <a href="selecionarVenda?id=<%=produto.getId()%>&qtd=1"
-                       class="btn btn-dark btn-sm"
-                       onclick="this.href = 'selecionarVenda?id=' + <%=produto.getId()%> + '&qtd=' + document.getElementById('quantidade_<%=produto.getId()%>').value;" data-bs-toggle="modal" data-bs-target="#carrinho">
-                        Adicionar
-                    </a>
-                </div>
+						<button class="btn btn-dark btn-sm"
+							onclick="adicionarProduto(<%=produto.getId()%>)">
+							Adicionar</button>
+
+					</div>
             </div>
         </div>
         <%
@@ -87,10 +113,10 @@ td a {
         %>
     </div>
 </div>
-        <!-- Área da tabela -->
+       
  
 
-    </div>
+   
 		<div class="modal fade" id="carrinho" data-bs-backdrop="static"
 			data-bs-keyboard="false" tabindex="-1"
 			aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -101,8 +127,54 @@ td a {
 						<button type="button" class="btn-close" data-bs-dismiss="modal"
 							aria-label="Close"></button>
 					</div>
-					<div class="modal-body">...</div>
-					<div class="modal-footer">
+				<div class="modal-body" id="conteudoCarrinho">
+					<%
+					List<Produtos> carrinho = (List<Produtos>) session.getAttribute("carrinho");
+					double subtotal = 0.0;
+
+					if (carrinho != null && !carrinho.isEmpty()) {
+					%>
+					<h5 class="text-white mb-3">
+						Seu carrinho tem
+						<%=carrinho.size()%>
+						itens
+					</h5>
+
+					<%
+					for (Produtos p : carrinho) {
+						double totalItem = p.getPreco_de_venda() * p.getQtd_estoque(); // qtd_estoque usado como quantidade selecionada
+						subtotal += totalItem;
+					%>
+					<div
+						class="d-flex bg-dark text-white rounded mb-3 p-2 align-items-center">
+						<img src="exibirImagemProduto?id=<%=p.getId()%>" alt="Imagem"
+							class="me-2 rounded"
+							style="width: 80px; height: 80px; object-fit: cover;">
+						<div class="flex-grow-1">
+							<h6 class="mb-1"><%=p.getDescricao()%></h6>
+							<div class="d-flex justify-content-between align-items-center">
+								<span>R$ <%=String.format("%.2f", p.getPreco_de_venda())%></span>
+								<span>Qtd: <%=p.getQtd_estoque()%></span>
+							</div>
+						</div>
+					</div>
+					<%
+					}
+					} else {
+					%>
+					<p class="text-white">Carrinho vazio.</p>
+					<%
+					}
+					%>
+				</div>
+
+				<div class="modal-footer">
+					  <div>
+					<label class="form-label">Subtotal:</label>
+					<input class="form-control" type="text" id="subtotalCarrinho" name="subtotal" 
+                      value="R$ <%= String.format("%.2f", subtotal).replace('.', ',') %>" readonly>
+
+					</div>
 						<button type="button" class="btn btn-secondary"
 							data-bs-dismiss="modal">Voltar a pedidos</button>
 						<button type="button" class="btn btn-primary">Finalizar</button>
@@ -110,7 +182,7 @@ td a {
 				</div>
 			</div>
 		</div>
-		</div>
+	
 		</body>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
@@ -133,6 +205,58 @@ td a {
         }
     }
 </script>
+
+<script>
+function adicionarProduto(id) {
+    const quantidade = document.getElementById("quantidade_" + id).value;
+
+    $.ajax({
+        url: "selecionarVendaCarrinho",
+        method: "GET",
+        data: { id: id, qtd: quantidade },
+        success: function(data) {
+           
+            $("#conteudoCarrinho").html(data);
+            $("#carrinho").modal("show");
+
+            
+            atualizarSubtotal();
+        },
+        error: function() {
+            alert("Erro ao adicionar produto ao carrinho.");
+        }
+    });
+}
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const subtotal = <%= String.format(Locale.US, "%.2f", subtotal) %>;
+        document.getElementById("subtotalCarrinho").value = "R$ " + subtotal.toLocaleString("pt-BR", {minimumFractionDigits: 2});
+    });
+</script>
+<script>
+
+
+function removerProduto(id) {
+    if (confirm("Tem certeza que deseja remover este item do carrinho?")) {
+        $.ajax({
+            url: "selecionarVendaCarrinho",
+            method: "GET",
+            data: { id: id, acao: "remover" }, 
+            success: function(data) {
+                
+                $("#conteudoCarrinho").html(data);
+            },
+            error: function() {
+                alert("Erro ao remover produto do carrinho.");
+            }
+        });
+    }
+}
+</script>
+
+
 
 
 </html>

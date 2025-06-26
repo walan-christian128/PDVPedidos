@@ -118,7 +118,7 @@ listaVenda = Vdao.listarVendasdoDia();
 </div>
 
 		<div id="form-container" class="container">
-    <form name="cadastrarProduto" action="insert" enctype="multipart/form-data">
+    <form name="cadastrarProduto" action="insert" enctype="multipart/form-data" method="post">
         <h2>Cadastro de Produtos</h2>
 
         <div class="mb-3">

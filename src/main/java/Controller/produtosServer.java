@@ -25,7 +25,7 @@ import jakarta.servlet.http.Part;
  * Servlet implementation class produtosServer
  */
 @MultipartConfig
-@WebServlet(urlPatterns = { "/main", "/insert", "/select", "/update", "/delete" })
+@WebServlet(urlPatterns = { "/main", "/insert", "/select", "/updateProduto", "/delete" })
 public class produtosServer extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -65,7 +65,20 @@ public class produtosServer extends HttpServlet {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else if (action.equals("/delete")) {
+		}
+		
+		else if (action.equals("/updateProduto")) {
+			try {
+				listandoProduto(request, response);
+			} catch (ClassNotFoundException | ServletException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NamingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else if (action.equals("/delete")) {
 			ApagarProdutos(request, response);
 		} else {
 			response.sendRedirect("Produtos.jsp");
@@ -103,6 +116,135 @@ public class produtosServer extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		
+		doGet(request, response);
+			}
+	
+	  private Image converterImagem(byte[] imagemBytes) {
+	        try {
+	            ByteArrayInputStream is = new ByteArrayInputStream(imagemBytes);
+	            return ImageIO.read(is);
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            return null;
+	        }
+	    }
+
+	  protected void CadastrandoProdutos(HttpServletRequest request, HttpServletResponse response)
+		        throws ServletException, IOException {
+		    
+		    // Configura a codificação de caracteres para evitar problemas com acentos.
+		    request.setCharacterEncoding("UTF-8");
+
+		    HttpSession session = request.getSession();
+		    String empresa = (String) session.getAttribute("empresa");
+
+		    // Verifica se a sessão da empresa está ativa.
+		    if (empresa == null || empresa.isEmpty()) {
+		        response.sendRedirect("LoginExpirado.jsp");
+		        return;
+		    }
+
+		    Produtos prod = new Produtos();
+		    
+		    // Variável para armazenar o ID do fornecedor como string, para ser processado depois.
+		    String fornecedorIdString = null;
+
+		    try {
+		        // Itera sobre TODAS as partes da requisição, tanto campos de texto quanto arquivos.
+		        for (Part part : request.getParts()) {
+		            String fieldName = part.getName();
+		            
+		            // Verifica se a parte é um campo de texto, não um arquivo.
+		            if (part.getSubmittedFileName() == null) {
+		                // Lê o valor do campo de texto do InputStream.
+		                String fieldValue = new String(part.getInputStream().readAllBytes(), "UTF-8");
+
+		                // Atribui o valor ao atributo correspondente do objeto Produtos.
+		                switch (fieldName) {
+		                    case "descricao":
+		                        prod.setDescricao(fieldValue);
+		                        break;
+		                    case "qtd_estoque":
+		                        // Verifica se o valor não está vazio antes de converter para Integer.
+		                        if (fieldValue != null && !fieldValue.isEmpty()) {
+		                            prod.setQtd_estoque(Integer.parseInt(fieldValue));
+		                        }
+		                        break;
+		                    case "preco_de_compra":
+		                        // Verifica se o valor não está vazio e substitui a vírgula por ponto.
+		                        if (fieldValue != null && !fieldValue.isEmpty()) {
+		                            prod.setPreco_de_compra(Double.parseDouble(fieldValue.replace(",", ".")));
+		                        }
+		                        break;
+		                    case "preco_de_venda":
+		                        // Verifica se o valor não está vazio e substitui a vírgula por ponto.
+		                        if (fieldValue != null && !fieldValue.isEmpty()) {
+		                            prod.setPreco_de_venda(Double.parseDouble(fieldValue.replace(",", ".")));
+		                        }
+		                        break;
+		                    case "for_id":
+		                        // Armazena o ID do fornecedor para ser processado após a iteração.
+		                        fornecedorIdString = fieldValue; 
+		                        break;
+		                }
+		            } else { // Se a parte for um arquivo (a imagem).
+		                if ("logo".equals(fieldName) && part.getSize() > 0) {
+		                    try (InputStream inputStream = part.getInputStream()) {
+		                        byte[] logoBytes = inputStream.readAllBytes();
+		                        prod.setImagem(logoBytes);
+		                    }
+		                }
+		            }
+		        }
+
+		        // Processa o ID do fornecedor após a iteração, garantindo que o valor foi capturado.
+		        if (fornecedorIdString != null && !fornecedorIdString.isEmpty()) {
+		            Fornecedores fornecedores = new Fornecedores();
+		            fornecedores.setId(Integer.parseInt(fornecedorIdString));
+		            prod.setFornecedor(fornecedores);
+		        }
+
+		        // Realiza o cadastro no banco de dados se a descrição foi preenchida.
+		        if (prod.getDescricao() != null && !prod.getDescricao().trim().isEmpty()) {
+		            ProdutosDAO dao = new ProdutosDAO(empresa);
+		            dao.cadastrar(prod);
+		            response.sendRedirect("Produtos.jsp");
+		        } else {
+		            // Se a descrição estiver vazia, redireciona para uma página de erro.
+		            request.setAttribute("erro", "A descrição do produto não pode ser vazia.");
+		            request.getRequestDispatcher("erro.jsp").forward(request, response);
+		        }
+
+		    } catch (Exception e) {
+		        // Captura e trata qualquer exceção que possa ocorrer durante o processo.
+		        e.printStackTrace();
+		        request.setAttribute("erro", "Erro ao cadastrar produto: " + e.getMessage());
+		        request.getRequestDispatcher("erro.jsp").forward(request, response);
+		    }
+		}
+
+
+	protected void ApagarProdutos(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String empresa = (String) session.getAttribute("empresa");
+		String id = request.getParameter("id");
+		if (id != null) {
+			try {
+				Produtos prod = new Produtos();
+				ProdutosDAO dao = new ProdutosDAO(empresa);
+				prod.setId(Integer.parseInt(id));
+				dao.excluir(prod);
+				response.sendRedirect("Produtos.jsp");
+			} catch (Exception e) {
+
+			}
+
+		}
+	}
+	protected void atualizarProduto(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException{
 		HttpSession session = request.getSession();
 		String empresa = (String) session.getAttribute("empresa");
 
@@ -169,76 +311,8 @@ public class produtosServer extends HttpServlet {
 
 			e.printStackTrace();
 		}
+		
 	}
 	
-	  private Image converterImagem(byte[] imagemBytes) {
-	        try {
-	            ByteArrayInputStream is = new ByteArrayInputStream(imagemBytes);
-	            return ImageIO.read(is);
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	            return null;
-	        }
-	    }
-
-	protected void CadastrandoProdutos(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		HttpSession session = request.getSession();
-		String empresa = (String) session.getAttribute("empresa");
-		String prodDescricao = request.getParameter("descricao");
-		if (prodDescricao != null && !prodDescricao.trim().isEmpty()) {
-
-			try {
-				Produtos prod = new Produtos();
-				ProdutosDAO dao = new ProdutosDAO(empresa);
-				prod.setDescricao(prodDescricao);
-				prod.setPreco_de_compra(Double.parseDouble(request.getParameter("preco_de_compra").replace(",", ".")));
-				prod.setPreco_de_venda(Double.parseDouble(request.getParameter("preco_de_venda").replace(",",".")));
-				try {
-					Part filePart = request.getPart("logo");
-					if (filePart != null && filePart.getSize() > 0) {
-					    try (InputStream inputStream = filePart.getInputStream()) {
-					        byte[] logoBytes = inputStream.readAllBytes();
-					        prod.setImagem(logoBytes);
-					    }
-					}
-				} catch (Exception e) {
-					 e.printStackTrace();
-					    request.setAttribute("erro", "Erro ao cadastrar produto: " + e.getMessage());
-					    request.getRequestDispatcher("erro.jsp").forward(request, response);
-				}
-				
-				prod.setQtd_estoque(Integer.parseInt(request.getParameter("qtd_estoque")));
-				Fornecedores fornecedores = new Fornecedores();
-				fornecedores.setId(Integer.parseInt(request.getParameter("for_id")));
-				prod.setFornecedor(fornecedores);
-				dao.cadastrar(prod);
-				response.sendRedirect("Produtos.jsp");
-
-			} catch (Exception e) {
-
-			}
-		}
-
-	}
-
-	protected void ApagarProdutos(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		HttpSession session = request.getSession();
-		String empresa = (String) session.getAttribute("empresa");
-		String id = request.getParameter("id");
-		if (id != null) {
-			try {
-				Produtos prod = new Produtos();
-				ProdutosDAO dao = new ProdutosDAO(empresa);
-				prod.setId(Integer.parseInt(id));
-				dao.excluir(prod);
-				response.sendRedirect("Produtos.jsp");
-			} catch (Exception e) {
-
-			}
-
-		}
-	}
 
 }

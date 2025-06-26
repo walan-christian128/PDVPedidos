@@ -35,13 +35,13 @@ public class ProdutosDAO {
 	public void cadastrar(Produtos obj) {
 		try {
 
-			String sql = "insert into tb_produtos(descricao,qtd_estoque,for_id,preco_de_compra,preco_de_venda,imagem)values(?,?,?,?,?,?)";
+			String sql = "insert into tb_produtos(descricao,qtd_estoque,preco_de_compra,preco_de_venda,for_id,imagem)values(?,?,?,?,?,?)";
 			PreparedStatement stmt = con.prepareStatement(sql);
 			stmt.setString(1, obj.getDescricao());
 			stmt.setInt(2, obj.getQtd_estoque());
-			stmt.setInt(3, obj.getFornecedor().getId());
-			stmt.setDouble(4, obj.getPreco_de_compra());
-			stmt.setDouble(5, obj.getPreco_de_venda());
+			stmt.setDouble(3, obj.getPreco_de_compra());
+			stmt.setDouble(4, obj.getPreco_de_venda());
+			stmt.setInt(5, obj.getFornecedor().getId());
 			
 			 if (obj.getImagem() != null) {
 	                ByteArrayInputStream bais = new ByteArrayInputStream(obj.getImagem());
