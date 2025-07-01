@@ -166,6 +166,24 @@ td a {
         </div>
     </div>
 </div>
+<div class="modal fade" id="modalMeusPedidos" tabindex="-1" aria-labelledby="modalMeusPedidosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMeusPedidosLabel">Meus Pedidos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="conteudoMeusPedidos">
+                    <p class="text-white">Carregando seus pedidos...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
 		</body>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
@@ -265,4 +283,41 @@ function removerProduto(id) {
         }
     });
 </script>
+<script>
+    // Função para carregar e exibir os pedidos no modal
+    function carregarMeusPedidos() {
+        $.ajax({
+            url: "listarPedidosCliente", // Chama o novo servlet
+            method: "GET",
+            success: function(data) {
+                $("#conteudoMeusPedidos").html(data); // Preenche o conteúdo do modal
+                // O modal será aberto pela função que chamou carregarMeusPedidos
+            },
+            error: function(xhr, status, error) {
+                console.error("Erro ao carregar meus pedidos:", status, error);
+                $("#conteudoMeusPedidos").html("<p class=\"text-danger\">Não foi possível carregar seus pedidos. Tente novamente mais tarde.</p>");
+                alert("Erro ao carregar seus pedidos. Detalhes: " + xhr.responseText);
+            }
+        });
+    }
+
+    // Verifica se o modal de pedidos deve ser aberto ao carregar a página
+    $(document).ready(function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const abrirModalPedidos = urlParams.get('abrirModalPedidos');
+
+        if (abrirModalPedidos === 'true') {
+            carregarMeusPedidos(); // Carrega os dados primeiro
+            $('#modalMeusPedidos').modal('show'); // Abre o modal
+            // Opcional: Remover o parâmetro da URL para que não reabra se a página for recarregada
+            history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+
+    // Você pode adicionar um botão para o cliente ver os pedidos manualmente também
+    // Por exemplo, um botão "Meus Pedidos" no menu ou na página
+    // Adicionar um botão no seu HTML:
+    // <button type="button" class="btn btn-info" onclick="carregarMeusPedidos(); $('#modalMeusPedidos').modal('show');">Meus Pedidos</button>
+</script>
+
 </html>
