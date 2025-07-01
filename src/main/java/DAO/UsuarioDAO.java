@@ -10,6 +10,7 @@ import java.sql.Statement;
 import javax.naming.NamingException;
 
 import Conexao.ConectionDataBases;
+import Model.Clientepedido;
 import Model.Empresa;
 import Model.PasswordUtil;
 import Model.Usuario;
@@ -219,6 +220,27 @@ public class UsuarioDAO {
 
 	    return 0; // Retorna 0 se o usuário não for encontrado
 	}
+	public int cidcliPedido(Clientepedido clienetepedido, String empresa) throws SQLException, ClassNotFoundException {
+	    Class.forName("com.mysql.cj.jdbc.Driver");
+	    con = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + empresa, "walan", "359483wa@");
+
+	    String sql = "SELECT id FROM tb_cliente_pedido WHERE email = ?";
+
+	    try {
+	        PreparedStatement stmt = con.prepareStatement(sql);
+	        stmt.setString(1, clienetepedido.getEmail());
+	        ResultSet rs = stmt.executeQuery();
+
+	        if (rs.next()) {
+	            return rs.getInt("id");
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return 0; // Retorna 0 se o usuário não for encontrado
+	}
+
 
 
 	public Usuario retornUser(Usuario usuario, String empresa,int idUser) throws SQLException, ClassNotFoundException {
@@ -239,6 +261,28 @@ public class UsuarioDAO {
 	        e.printStackTrace();
 	    }
 		return usuario;
+
+
+	}
+	
+	public Clientepedido retornClipedido(Clientepedido clienetepedido, String empresa,int idUser) throws SQLException, ClassNotFoundException {
+	    Class.forName("com.mysql.cj.jdbc.Driver");
+	    con = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + empresa, "walan", "359483wa@");
+
+	    String sql = "SELECT id FROM tb_cliente_pedido WHERE email = ?";
+
+	    try {
+	        PreparedStatement stmt = con.prepareStatement(sql);
+	        stmt.setString(1, clienetepedido.getEmail());
+	        ResultSet rs = stmt.executeQuery();
+
+	        if (rs.next()) {
+	        	clienetepedido.setId(rs.getInt("id"));
+	        }
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+		return clienetepedido;
 
 
 	}

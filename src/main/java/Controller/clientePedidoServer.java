@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 import DAO.UsuarioDAO;
+import Model.Clientepedido;
 import Model.Empresa;
 import Model.Usuario;
 
@@ -77,11 +78,29 @@ public class clientePedidoServer extends HttpServlet {
 	        }
 
 	        // 🔹 Depois busca o ID do usuário
+	        
+	       
 	     
-	        Usuario usuarioObj = new Usuario();
+	        Clientepedido usuarioObj = new Clientepedido();
 	        usuarioObj.setEmail(email);
 	        usuarioObj.setSenha(senha);
-	        response.sendRedirect("ProdutosPedidos.jsp");
+	        
+	        int usuarioID = dao.cidcliPedido(usuarioObj, empresa);
+	        Clientepedido nomeUser = dao.retornClipedido(usuarioObj, empresa, usuarioID);
+	        
+	        if (usuarioID > 0) {
+	            session.setAttribute("usuarioID", usuarioID);
+	            session.setAttribute("usuarioNome", nomeUser);
+	            System.out.println("Usuário logado: " + usuarioID);
+	            response.sendRedirect("ProdutosPedidos.jsp");
+	        } else {
+	            request.setAttribute("erro", "Erro ao buscar ID do usuário.");
+	            RequestDispatcher rd = request.getRequestDispatcher("LoginPedido.jsp");
+	            rd.forward(request, response);
+	           
+	        }
+	        
+	       
 	      
 
 	

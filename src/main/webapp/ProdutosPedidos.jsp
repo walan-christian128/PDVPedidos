@@ -8,11 +8,8 @@
 <%@ page import="java.util.Locale" %>
 
 
-
 <%
 String empresa = (String) session.getAttribute("empresa");
-
-
 %>
 
 <%
@@ -65,12 +62,22 @@ td a {
         text-align: right;
     }
 </style>
+
 </head>
 
 <body style="background-image: url('img/Gemini_Generated_Image_kysa9wkysa9wkysa.png'); background-size: cover; background-position: center; margin: 0; padding: 0; height: 100vh;">
-
-    <!-- Centraliza na tela inteira -->
-   <div class="container mt-4">
+	<div class="container mt-4 text-center">
+		<button type="button" class="btn btn-danger btn-lg"
+			onclick="verCarrinho()">
+			Ver Carrinho
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+				fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
+            <path
+					d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+        </svg>
+		</button>
+	</div>
+	<div class="container mt-4">
     <div class="row justify-content-center">
         <%
         if (prodp != null && !prodp.isEmpty()) {
@@ -117,72 +124,48 @@ td a {
  
 
    
-		<div class="modal fade" id="carrinho" data-bs-backdrop="static"
-			data-bs-keyboard="false" tabindex="-1"
-			aria-labelledby="staticBackdropLabel" aria-hidden="true">
-			<div class="modal-dialog modal-sm">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h1 class="modal-title fs-5" id="staticBackdropLabel">Itens no carrinho</h1>
-						<button type="button" class="btn-close" data-bs-dismiss="modal"
-							aria-label="Close"></button>
-					</div>
-				<div class="modal-body" id="conteudoCarrinho">
-					<%
-					List<Produtos> carrinho = (List<Produtos>) session.getAttribute("carrinho");
-					double subtotal = 0.0;
+		<div class="modal fade" id="carrinho" tabindex="-1" aria-labelledby="carrinhoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg"> <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="carrinhoLabel">Itens no carrinho</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
 
-					if (carrinho != null && !carrinho.isEmpty()) {
-					%>
-					<h5 class="text-white mb-3">
-						Seu carrinho tem
-						<%=carrinho.size()%>
-						itens
-					</h5>
+            <div class="modal-body">
+                <div id="conteudoCarrinho" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                    </div>
 
-					<%
-					for (Produtos p : carrinho) {
-						double totalItem = p.getPreco_de_venda() * p.getQtd_estoque(); // qtd_estoque usado como quantidade selecionada
-						subtotal += totalItem;
-					%>
-					<div
-						class="d-flex bg-dark text-white rounded mb-3 p-2 align-items-center">
-						<img src="exibirImagemProduto?id=<%=p.getId()%>" alt="Imagem"
-							class="me-2 rounded"
-							style="width: 80px; height: 80px; object-fit: cover;">
-						<div class="flex-grow-1">
-							<h6 class="mb-1"><%=p.getDescricao()%></h6>
-							<div class="d-flex justify-content-between align-items-center">
-								<span>R$ <%=String.format("%.2f", p.getPreco_de_venda())%></span>
-								<span>Qtd: <%=p.getQtd_estoque()%></span>
-							</div>
-						</div>
-					</div>
-					<%
-					}
-					} else {
-					%>
-					<p class="text-white">Carrinho vazio.</p>
-					<%
-					}
-					%>
-				</div>
+                <div class="d-flex justify-content-between align-items-center mt-3 p-2 bg-secondary rounded">
+                    <h5 class="mb-0">Subtotal:</h5>
+                    <input class="form-control-plaintext text-white text-end fw-bold" type="text" id="subtotalCarrinho" name="subtotal" value="R$ 0,00" readonly style="width: auto;">
+                </div>
 
-				<div class="modal-footer">
-					  <div>
-					<label class="form-label">Subtotal:</label>
-					<input class="form-control" type="text" id="subtotalCarrinho" name="subtotal" 
-                      value="R$ <%= String.format("%.2f", subtotal).replace('.', ',') %>" readonly>
+                <form id="formFinalizarPedido" action="finalizarPedidoServlet" method="post" class="mt-4">
+                    <input type="hidden" name="clienteId" value="<%= (session.getAttribute("usuarioID") != null) ? session.getAttribute("usuarioID") : "" %>">
+                    <div class="mb-3">
+                        <label for="observacoesPedido" class="form-label">Observações:</label>
+                        <textarea class="form-control bg-dark text-white" id="observacoesPedido" name="observacoes" rows="2" placeholder="Adicione observações sobre o pedido..."></textarea>
+                    </div>
 
-					</div>
-						<button type="button" class="btn btn-secondary"
-							data-bs-dismiss="modal">Voltar a pedidos</button>
-						<button type="button" class="btn btn-primary">Finalizar</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	
+                    <div class="mb-3">
+                        <label for="formaPagamento" class="form-label">Forma de pagamento (no ato da entrega):</label>
+                        <select class="form-select bg-dark text-white" id="formaPagamento" name="formaPagamento" required>
+                            <option value="" selected disabled>Selecione a Opção de pagamento</option>
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Cartao_Credito">Cartão de Crédito</option>
+                            <option value="Cartao_Debito">Cartão de Débito</option>
+                            <option value="Pix">Pix</option>
+                        </select>
+                    </div>
+                </form> </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar a Produtos</button>
+                <button type="button" class="btn btn-primary" id="btnFinalizarPedido">Finalizar Pedido</button>
+            </div>
+        </div>
+    </div>
+</div>
 		</body>
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
@@ -213,50 +196,73 @@ function adicionarProduto(id) {
     $.ajax({
         url: "selecionarVendaCarrinho",
         method: "GET",
-        data: { id: id, qtd: quantidade },
+        data: { id: id, qtd: quantidade, acao: "adicionar" }, // Adicionado acao: "adicionar"
         success: function(data) {
            
             $("#conteudoCarrinho").html(data);
             $("#carrinho").modal("show");
 
-            
-            atualizarSubtotal();
+            // A função atualizarSubtotal() não está no código, mas se existir, ela seria chamada aqui.
+            // Se o subtotal já vem no 'data' (como no seu servlet), você não precisa de uma função separada.
+            // O script dentro do 'data' já atualiza o campo #subtotalCarrinho
         },
-        error: function() {
-            alert("Erro ao adicionar produto ao carrinho.");
+        error: function(xhr, status, error) { // Adicionado tratamento de erro mais detalhado
+            console.error("Erro ao adicionar produto ao carrinho:", status, error);
+            alert("Erro ao adicionar produto ao carrinho. Detalhes: " + xhr.responseText);
         }
     });
 }
 </script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const subtotal = <%= String.format(Locale.US, "%.2f", subtotal) %>;
-        document.getElementById("subtotalCarrinho").value = "R$ " + subtotal.toLocaleString("pt-BR", {minimumFractionDigits: 2});
-    });
-</script>
-<script>
 
-
+<script>
 function removerProduto(id) {
     if (confirm("Tem certeza que deseja remover este item do carrinho?")) {
         $.ajax({
             url: "selecionarVendaCarrinho",
             method: "GET",
-            data: { id: id, acao: "remover" }, 
+            data: { id: id, acao: "remover" }, // 'acao' para indicar remoção
             success: function(data) {
-                
+                // Atualiza o conteúdo do modal com o carrinho atualizado
                 $("#conteudoCarrinho").html(data);
+                // A função atualizarSubtotal() não está no código, mas se existir, ela seria chamada aqui.
+                // O script dentro do 'data' já atualiza o campo #subtotalCarrinho
             },
-            error: function() {
-                alert("Erro ao remover produto do carrinho.");
+            error: function(xhr, status, error) { // Adicionado tratamento de erro mais detalhado
+                console.error("Erro ao remover produto do carrinho:", status, error);
+                alert("Erro ao remover produto do carrinho. Detalhes: " + xhr.responseText);
             }
         });
     }
 }
 </script>
-
-
-
-
+<script>
+    function verCarrinho() {
+        $.ajax({
+            url: "selecionarVendaCarrinho",
+            method: "GET",
+            data: { acao: "ver" }, // 'acao' para indicar que queremos apenas ver o carrinho
+            success: function(data) {
+                $("#conteudoCarrinho").html(data); // Atualiza o conteúdo do modal com os itens do carrinho
+                $("#carrinho").modal("show");      // Abre o modal do carrinho
+            },
+            error: function(xhr, status, error) { // Adicionado tratamento de erro mais detalhado
+                console.error("Erro ao carregar o carrinho:", status, error);
+                alert("Erro ao carregar o carrinho. Detalhes: " + xhr.responseText);
+            }
+        });
+    }
+</script>
+<script>
+    // Adiciona um listener para o botão "Finalizar Pedido" no modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnFinalizarPedido = document.getElementById('btnFinalizarPedido');
+        if (btnFinalizarPedido) {
+            btnFinalizarPedido.addEventListener('click', function() {
+                // Submete o formulário de finalização do pedido
+                document.getElementById('formFinalizarPedido').submit();
+            });
+        }
+    });
+</script>
 </html>

@@ -33,7 +33,7 @@ td a {
 </style>
 </head>
 
-<body style="background-image: url('img/Gemini_Generated_Image_6hzfnt6hzfnt6hzf.png'); background-size: cover; background-position: center; margin: 0; padding: 0; height: 100vh;">
+<body style="background-image: url('img/Gemini_Generated_Image_kysa9wkysa9wkysa.png'); background-size: cover; background-position: center; margin: 0; padding: 0; height: 100vh;">
 
     <!-- Centraliza na tela inteira -->
    <div class="container mt-5">

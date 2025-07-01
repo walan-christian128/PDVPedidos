@@ -8,7 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class TokenServiceDAO {
     private static final String SECRET_KEY = "MinhaChaveSecreta";
-    private static final long TEMPO_EXPIRACAO = 36; // 1 hora
+    private static final long TEMPO_EXPIRACAO = 3; // 1 hora
 
     public static String gerarToken() {
         long timestamp = Instant.now().getEpochSecond(); // Pega o tempo atual
