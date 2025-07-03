@@ -30,7 +30,8 @@ prodp = daop.listarProdutos(); // Atribui o resultado da busca à lista exibida 
     integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
     crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css" />
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
 td a {
     text-decoration: none;
@@ -61,6 +62,10 @@ td a {
         font-weight: bold;
         text-align: right;
     }
+    .status-progress-bar img {
+    max-width: 30px; /* Ajuste este valor conforme necessário */
+    height: auto;
+}
 </style>
 
 </head>
@@ -76,6 +81,27 @@ td a {
 					d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
         </svg>
 		</button>
+		<button class="btn btn-info rounded-circle shadow" id="btnVerPedidosDoDia"
+    style="position: fixed; bottom: 20px; right: 20px; width: 80px; height: 80px; font-size: 1.1rem; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 5px;"
+    title="Ver Meus Pedidos do Dia">
+    <i class="bi bi-basket mb-1" style="font-size: 1.5rem;"></i> <small>Pedidos</small> </button>
+
+<div class="modal fade" id="meusPedidosModal" tabindex="-1" aria-labelledby="meusPedidosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meusPedidosModalLabel">Meus Pedidos do Dia</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="conteudoPedidos">
+                <p>Carregando pedidos...</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
 	</div>
 	<div class="container mt-4">
     <div class="row justify-content-center">
@@ -318,6 +344,58 @@ function removerProduto(id) {
     // Por exemplo, um botão "Meus Pedidos" no menu ou na página
     // Adicionar um botão no seu HTML:
     // <button type="button" class="btn btn-info" onclick="carregarMeusPedidos(); $('#modalMeusPedidos').modal('show');">Meus Pedidos</button>
+</script>
+<script>
+    // Função para carregar os pedidos via AJAX e exibir no modal
+    function carregarPedidosDoDia() {
+        const conteudoPedidos = document.getElementById('conteudoPedidos');
+        if (conteudoPedidos) {
+            conteudoPedidos.innerHTML = '<p class="text-white text-center">Carregando seus pedidos...</p>'; // Mensagem de carregamento
+
+            fetch('listarPedidosCliente') // Chama o servlet mapeado para /listarPedidosCliente
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 403) { // SC_FORBIDDEN
+                            return response.text().then(text => Promise.reject(text));
+                        }
+                        throw new Error('Erro na rede ou no servidor: ' + response.statusText);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    conteudoPedidos.innerHTML = data; // Insere o HTML retornado pelo servlet
+                    // Se o modal não estiver aberto, abra-o
+                    var meusPedidosModal = new bootstrap.Modal(document.getElementById('meusPedidosModal'));
+                    meusPedidosModal.show();
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar pedidos:', error);
+                    let errorMessage = 'Não foi possível carregar os pedidos. Tente novamente mais tarde.';
+                    if (typeof error === 'string') { // Se o erro for a mensagem do servidor (403)
+                         errorMessage = error;
+                    }
+                    conteudoPedidos.innerHTML = '<p class="text-danger text-center">' + errorMessage + '</p>';
+                    var meusPedidosModal = new bootstrap.Modal(document.getElementById('meusPedidosModal'));
+                    meusPedidosModal.show(); // Abre o modal para mostrar o erro
+                });
+        }
+    }
+
+    // Adiciona o evento de clique ao botão
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnVerPedidos = document.getElementById('btnVerPedidosDoDia');
+        if (btnVerPedidos) {
+            btnVerPedidos.addEventListener('click', carregarPedidosDoDia);
+        }
+
+        // Se a página foi recarregada com o parâmetro 'abrirModalPedidos=true' (do finalizarPedidoServlet)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('abrirModalPedidos') && urlParams.get('abrirModalPedidos') === 'true') {
+            carregarPedidosDoDia(); // Chama a função para carregar e abrir o modal
+            // Opcional: Remover o parâmetro da URL para não reabrir o modal em futuros recarregamentos manuais
+            // history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
 </script>
 
 </html>

@@ -197,6 +197,27 @@ public class pedidoServer extends HttpServlet {
 
         if (listaPedidos != null && !listaPedidos.isEmpty()) {
             for (Pedidos pedido : listaPedidos) {
+                // Determine a imagem de status com base no status do pedido
+                String statusImageUrl = "";
+                String statusText = pedido.getStatus(); // Supondo que getStatus() retorna a string do status
+
+                // **Lógica para mapear o status do banco para a imagem correspondente**
+                // Certifique-se de que os nomes dos status aqui (ex: "Pendente", "Confirmado")
+                // correspondam EXATAMENTE aos valores que você armazena no banco de dados.
+                if ("Pendente".equalsIgnoreCase(statusText)) {
+                    statusImageUrl = "img/progress-pedido-pendente.png"; // Ex: Apenas a cesta preenchida
+                } else if ("Confirmado".equalsIgnoreCase(statusText) || "Pagamento Confirmado".equalsIgnoreCase(statusText)) {
+                    statusImageUrl = "img/progress-em-preparacao.png"; // Ex: Cesta e dinheiro preenchidos
+                } else if ("Enviado".equalsIgnoreCase(statusText)) {
+                    statusImageUrl = "img/progress-pedido-enviado.png"; // Ex: Cesta, dinheiro e caixa preenchidos
+                } else if ("Entregue".equalsIgnoreCase(statusText)) {
+                    statusImageUrl = "img/progress-pedido-entregue.png"; // Ex: Todos os 4 preenchidos
+                } else {
+                    // Status desconhecido ou padrão, se houver
+                    statusImageUrl = "img/progress-default.png"; // Crie uma imagem padrão, se necessário
+                }
+
+
                 out.println("<div class=\"card bg-secondary text-white mb-3 shadow-sm\">");
                 out.println("<div class=\"card-header d-flex justify-content-between align-items-center\">");
                 out.println("<h6 class=\"mb-0\">Pedido #" + pedido.getIdPedido() + " - Status: " + pedido.getStatus() + "</h6>");
@@ -207,15 +228,20 @@ public class pedidoServer extends HttpServlet {
                 if (pedido.getObservacoes() != null && !pedido.getObservacoes().isEmpty()) {
                     out.println("<p class=\"card-text mb-1\">Observações: " + pedido.getObservacoes() + "</p>");
                 }
+
+                // **Adicionando a imagem de status aqui**
+                out.println("<div class=\"status-progress-bar text-center mt-3\">");
+                out.println("<img src=\"" + statusImageUrl + "\" alt=\"Status do Pedido\" class=\"img-fluid\">");
+                out.println("</div>");
+
                 // TODO: Adicionar lógica para exibir itens do pedido se estiverem disponíveis na classe Pedidos
                 out.println("</div>"); // card-body
                 out.println("</div>"); // card
             }
         } else {
-            out.println("<p class=\"text-white\">Você ainda não tem nenhum pedido.</p>");
+            out.println("<p class=\"text-white\">Você ainda não tem nenhum pedido na data de hoje.</p>"); // Mensagem atualizada
         }
     }
-
 
     // --- Outros Métodos (permanecem como estão) ---
     private void CadClientePedido(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException  {
@@ -291,7 +317,7 @@ public class pedidoServer extends HttpServlet {
 	    PedidosDAO pedidoDAO = null;
 	    try {
 	        pedidoDAO = new PedidosDAO(empresa); // Instanciar o DAO aqui, dentro do try
-	        //pedidoDAO.salvarPedido(novoPedido); // Chamar o método que salva o pedido e seus itens
+	        pedidoDAO.cadastrarPedido(novoPedido); // Chamar o método que salva o pedido e seus itens
 	    } catch (ClassNotFoundException e) {
 	        e.printStackTrace();
 	        throw new ServletException("Erro de configuração do DAO de Pedidos.", e); // Lançar para o chamador
