@@ -163,11 +163,13 @@ td a {
 
                 <div class="d-flex justify-content-between align-items-center mt-3 p-2 bg-secondary rounded">
                     <h5 class="mb-0">Subtotal:</h5>
-                    <input class="form-control-plaintext text-white text-end fw-bold" type="text" id="subtotalCarrinho" name="subtotal" value="R$ 0,00" readonly style="width: auto;">
+                   <input class="form-control-plaintext text-white text-end fw-bold" type="text" id="subtotalCarrinho" value="R$ XX,XX" readonly style="width: auto;">
+                   
                 </div>
 
                 <form id="formFinalizarPedido" action="finalizarPedidoServlet" method="post" class="mt-4">
                     <input type="hidden" name="clienteId" value="<%= (session.getAttribute("usuarioID") != null) ? session.getAttribute("usuarioID") : "" %>">
+                     <input type="hidden" name="subtotal" id="hiddenSubtotal">
                     <div class="mb-3">
                         <label for="observacoesPedido" class="form-label">Observações:</label>
                         <textarea class="form-control bg-dark text-white" id="observacoesPedido" name="observacoes" rows="2" placeholder="Adicione observações sobre o pedido..."></textarea>
@@ -297,18 +299,34 @@ function removerProduto(id) {
         });
     }
 </script>
+
+
 <script>
     // Adiciona um listener para o botão "Finalizar Pedido" no modal
     document.addEventListener('DOMContentLoaded', function() {
         const btnFinalizarPedido = document.getElementById('btnFinalizarPedido');
-        if (btnFinalizarPedido) {
+        const formFinalizarPedido = document.getElementById('formFinalizarPedido');
+        const subtotalCarrinhoDisplay = document.getElementById('subtotalCarrinho');
+        const hiddenSubtotalInput = document.getElementById('hiddenSubtotal'); // O novo input hidden
+
+        if (btnFinalizarPedido && formFinalizarPedido && subtotalCarrinhoDisplay && hiddenSubtotalInput) {
             btnFinalizarPedido.addEventListener('click', function() {
-                // Submete o formulário de finalização do pedido
-                document.getElementById('formFinalizarPedido').submit();
+                // 1. Obter o valor atual do subtotal formatado
+                let subtotalText = subtotalCarrinhoDisplay.value; // Ex: "R$ 150,75"
+
+                // 2. Limpar o valor: remover "R$", remover espaços, substituir vírgula por ponto
+                subtotalText = subtotalText.replace('R$', '').trim().replace(',', '.');
+
+                // 3. Atribuir o valor limpo ao input hidden
+                hiddenSubtotalInput.value = subtotalText;
+
+                // 4. Submeter o formulário
+                formFinalizarPedido.submit();
             });
         }
     });
 </script>
+
 <script>
     // Função para carregar e exibir os pedidos no modal
     function carregarMeusPedidos() {

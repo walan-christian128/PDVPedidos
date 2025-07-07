@@ -37,6 +37,13 @@ public class Pedidos {
  private String status;
  private String observacoes;
  private String formapagamento;
+ public double getTotalPedido() {
+	return totalPedido;
+}
+ public void setTotalPedido(double totalPedido) {
+	this.totalPedido = totalPedido;
+ }
+ private double totalPedido;
  public String getFormapagamento() {
 	return formapagamento;
  }

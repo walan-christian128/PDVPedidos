@@ -157,16 +157,19 @@ request.setAttribute("totalVendido", totalVendasDia);
 						%>
 					</tbody>
 				</table>
-				<div class="col-md-6">
+		<div class="col-md-6">
 					<input type="text" class="form-control bg-dark text-white"
 						name="Usuarionome"
-						value="<%Model.Usuario usuario = (Model.Usuario) session.getAttribute("usuarioNome");
+						value="<%
+                                // Volte a esperar um objeto Model.Usuario aqui
+                                Model.Usuario usuario = (Model.Usuario) session.getAttribute("usuarioNome");
                                 if (usuario != null) {
 	                                String nomeUsuario = usuario.getNome();
-	                                out.println("Usuario : " + nomeUsuario);
-                              } else {
-	                         out.println("Usuário não encontrado na sessão.");
-                            }%>"
+	                                out.println("Usuario : " + nomeUsuario); // Ou out.print(nomeUsuario); dependendo do que você quer no input value
+                                } else {
+	                                out.println("Usuário não encontrado na sessão.");
+                                }
+                            %>"
 						aria-label="Sizing example input"
 						aria-describedby="inputGroup-sizing-sm">
 				</div>

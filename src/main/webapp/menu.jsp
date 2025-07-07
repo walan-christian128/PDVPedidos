@@ -62,19 +62,17 @@ if (empresa4 == null || empresa4.isEmpty()) {
 								class="bi bi-house-up-fill"></i></span> <span class="txt-link">Pagina
 								Inicial</span>
 					</a></li>
-					
-						<li class="nav-item"><a class="nav-link active md-2"
-						href="Home.jsp" style="font-size: 2rem;"> <span class="icon"><i
-								class="bi bi-pen-fill"></i></span> <span class="txt-link">Pedidos</span>
-					</a></li>
-					   	<li class="nav-item"><a class="nav-link active md-2"
-						href="LinkCadastroPedido.jsp" style="font-size: 2rem;"> <span class="icon"><i
-								class="bi bi-link"></i></span> <span class="txt-link">Link de cadastro de clientes</span>
-					</a></li>
-					
 					<li class="nav-item"><a class="nav-link active md-3" href="Produtos.jsp"
 						style="font-size: 2rem;"> <span class="icon"><i
 								class="bi bi-backpack4"></i></span> <span class="txt-link">Estoque</span>
+					</a></li>
+					<li class="nav-item"><a class="nav-link active md-2"
+						href="Pedidos.jsp" style="font-size: 2rem;"> <span class="icon"><i
+								class="bi bi-pen-fill"></i></span> <span class="txt-link">Pedidos</span>
+					</a></li>
+					<li class="nav-item"><a class="nav-link active md-2"
+						href="LinkCadastroPedido.jsp" style="font-size: 2rem;"> <span class="icon"><i
+								class="bi bi-link"></i></span> <span class="txt-link">Link de cadastro de clientes</span>
 					</a></li>
 				
 					<li class="nav-item"><a class="nav-link active md-3" href="#"
