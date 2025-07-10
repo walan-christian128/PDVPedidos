@@ -46,6 +46,8 @@ import org.json.JSONArray;
 
 import org.json.JSONObject;
 
+import com.google.gson.Gson;
+
 import Model.Clientepedido;
 
 import Model.ItemCarrinho;
@@ -69,7 +71,7 @@ import DAO.ProdutosDAO;
 import DAO.itensVendaDAO;
 
 @WebServlet(urlPatterns = { "/pedidoServer", "/selecionarVendaCarrinho", "/finalizarPedidoServlet",
-		"/listarPedidosCliente", "/listarPedidos" })
+		"/listarPedidosCliente", "/listarPedidos","/selecionarPedido" })
 
 public class pedidoServer extends HttpServlet {
 
@@ -137,6 +139,9 @@ public class pedidoServer extends HttpServlet {
 			listapedidos(request, response);
 
 		}
+		else if ("/selecionarPedido".equals(servletPath)) {
+		    selecionarPedido(request, response);
+		}
 
 		else {
 
@@ -173,6 +178,45 @@ public class pedidoServer extends HttpServlet {
 
 	}
 
+	private void selecionarPedido(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	    String empresa = (String) request.getSession().getAttribute("empresa");
+	    if (empresa == null) {
+	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	        response.getWriter().write("Sessão expirada. Faça login novamente.");
+	        return;
+	    }
+
+	    String idStr = request.getParameter("id");
+	    if (idStr == null || idStr.isEmpty()) {
+	        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	        response.getWriter().write("ID do pedido não fornecido.");
+	        return;
+	    }
+
+	    try {
+	        int idPedido = Integer.parseInt(idStr);
+	        ItensPedidoDAO dao = new ItensPedidoDAO(empresa);
+	        List<ItensPedidos> itens = dao.detalhePedido(idPedido);
+
+	        response.setContentType("application/json");
+	        response.setCharacterEncoding("UTF-8");
+
+	        if (itens == null || itens.isEmpty()) {
+	            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+	            response.getWriter().write("{\"error\":\"Pedido sem itens ou não encontrado.\"}");
+	        } else {
+	            Gson gson = new Gson();
+	            String json = gson.toJson(itens);
+	            response.getWriter().write(json);
+	        }
+	    } catch (NumberFormatException e) {
+	        response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	        response.getWriter().write("{\"error\":\"ID do pedido inválido.\"}");
+	    } catch (Exception e) {
+	        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	        response.getWriter().write("{\"error\":\"Erro interno ao buscar detalhes do pedido.\"}");
+	    }
+	}
 	private void listapedidos(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 

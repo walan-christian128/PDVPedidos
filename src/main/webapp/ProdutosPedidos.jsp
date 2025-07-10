@@ -180,8 +180,8 @@ td a {
                         <select class="form-select bg-dark text-white" id="formaPagamento" name="formaPagamento" required>
                             <option value="" selected disabled>Selecione a Opção de pagamento</option>
                             <option value="Dinheiro">Dinheiro</option>
-                            <option value="Cartao_Credito">Cartão de Crédito</option>
-                            <option value="Cartao_Debito">Cartão de Débito</option>
+                            <option value="Cartao Crédito">Cartão de Crédito</option>
+                            <option value="Cartao Debito">Cartão de Débito</option>
                             <option value="Pix">Pix</option>
                         </select>
                     </div>
