@@ -29,7 +29,7 @@ try {
 <html>
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="30">
+
 <link rel="icon"
 	href="img/2992664_cart_dollar_mobile_shopping_smartphone_icon.png">
 <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -69,6 +69,39 @@ try {
 	style="background-image: url('img/Gemini_Generated_Image_97a36f97a36f97a3.jpg'); background-size: cover; background-position: center; margin: 0; padding: 0; min-height: 100vh; width: 100vw; display: flex; flex-direction: column;">
 
 	<%@ include file="menu.jsp"%>
+
+ 
+
+    <div class="container mt-3"> <%-- Use um container para centralizar e limitar a largura --%>
+        <%
+        String mensagemSucesso = (String) session.getAttribute("mensagemSucesso");
+        if (mensagemSucesso != null) {
+            session.removeAttribute("mensagemSucesso");
+        %>
+            <div class="alert alert-success alert-dismissible fade show py-2" role="alert" style="font-size: 0.9rem;">
+                <%= mensagemSucesso %>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <%
+        }
+
+        String mensagemErro = (String) session.getAttribute("mensagemErro");
+        if (mensagemErro != null) {
+            session.removeAttribute("mensagemErro");
+        %>
+            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert" style="font-size: 0.9rem;">
+                <%= mensagemErro %>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        <%
+        }
+        %>
+    </div>
+
+
+
+
+
 
 	<div class="container-fluid flex-grow-1 py-4">
 		<h3 class="mb-4 text-dark">Pedidos</h3>
@@ -191,14 +224,19 @@ try {
         <td><%= pedidos.get(i).getObservacoes() != null && !pedidos.get(i).getObservacoes().isEmpty() ? pedidos.get(i).getObservacoes() : "-" %></td>
         <td><%= pedidos.get(i).getFormapagamento() != null && !pedidos.get(i).getFormapagamento().isEmpty() ? pedidos.get(i).getFormapagamento() : "-" %></td>
         <td>
-            <button type="button"
-                    class="btn btn-sm btn-info visualizar-pedido"
-                    data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
-                    data-bs-toggle="modal"
-                    data-bs-target="#gereciarPedido">
-                <i class="bi bi-eye"></i> Detalhes
-            </button>
-        </td>
+    <button type="button"
+            class="btn btn-sm btn-info visualizar-pedido"
+            data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
+            data-bs-toggle="modal"
+            data-bs-target="#gereciarPedido">
+        <i class="bi bi-eye"></i> Detalhes
+    </button>
+    <a type="button"
+            class="btn btn-sm btn-success btn-atualizar-status" data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
+            data-novo-status="Em Preparo" data-bs-toggle="modal" data-bs-target="#atualizarStatus" >
+        <i class="bi bi-arrow-up-circle"></i> Atualizar Status
+    </a>
+</td>
     </tr>
     <%
         }
@@ -217,354 +255,489 @@ try {
         </div>
 	</div>
 
-   <div class="modal fade" id="gereciarPedido" data-bs-backdrop="static"
-     data-bs-keyboard="false" tabindex="-1"
-     aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"> <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="staticBackdropLabel">Detalhes do Pedido <span id="modalPedidoId"></span></h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="bg-light p-4 rounded shadow mb-4"> <h5 class="text-center mb-3">Informações do Pedido e Cliente</h5>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>ID Pedido:</strong> <span id="modalIdPedido"></span></p>
-                            <p><strong>Data Pedido:</strong> <span id="modalDataPedido"></span></p>
-                            <p><strong>Status:</strong> <span id="modalStatusPedido"></span></p>
-                            <p><strong>Total Pedido:</strong> <span id="modalTotalPedido"></span></p>
-                            <p><strong>Forma Pagamento:</strong> <span id="modalFormaPagamento"></span></p>
-                            <p><strong>Observações:</strong> <span id="modalObservacoes"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Cliente:</strong> <span id="modalNomeCliente"></span></p>
-                            <p><strong>Endereço:</strong> <span id="modalEnderecoCliente"></span></p>
-                            <p><strong>Número:</strong> <span id="modalNumeroCliente"></span></p>
-                            <p><strong>CEP:</strong> <span id="modalCepCliente"></span></p>
-                            <p><strong>Estado:</strong> <span id="modalEstadoCliente"></span></p>
-                            <p><strong>Telefone:</strong> <span id="modalTelefoneCliente"></span></p>
-                            <p><strong>Email:</strong> <span id="modalEmailCliente"></span></p>
-                        </div>
-                    </div>
-                </div>
+	<div class="modal fade" id="gereciarPedido" data-bs-backdrop="static"
+		data-bs-keyboard="false" tabindex="-1"
+		aria-labelledby="staticBackdropLabel" aria-hidden="true">
+		<div
+			class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="staticBackdropLabel">
+						Detalhes do Pedido <span id="modalPedidoId"></span>
+					</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"
+						aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="bg-light p-4 rounded shadow mb-4">
+						<h5 class="text-center mb-3">Informações do Pedido e Cliente</h5>
+						<div class="row">
+							<div class="col-md-6">
+								<p>
+									<strong>Codigo:</strong> <span id="modalIdPedido"></span>
+								</p>
+								<p>
+									<strong>Data Pedido:</strong> <span id="modalDataPedido"></span>
+								</p>
+								<p>
+									<strong>Status:</strong> <span id="modalStatusPedido"></span>
+								</p>
+								<p>
+									<strong>Total Pedido:</strong> <span id="modalTotalPedido"></span>
+								</p>
+								<p>
+									<strong>Forma Pagamento:</strong> <span
+										id="modalFormaPagamento"></span>
+								</p>
+								<p>
+									<strong>Observações:</strong> <span id="modalObservacoes"></span>
+								</p>
+							</div>
+							<div class="col-md-6">
+								<p>
+									<strong>Cliente:</strong> <span id="modalNomeCliente"></span>
+								</p>
+								<p>
+									<strong>Endereço:</strong> <span id="modalEnderecoCliente"></span>
+								</p>
+								<p>
+									<strong>Número:</strong> <span id="modalNumeroCliente"></span>
+								</p>
+								<p>
+									<strong>CEP:</strong> <span id="modalCepCliente"></span>
+								</p>
+								<p>
+									<strong>Estado:</strong> <span id="modalEstadoCliente"></span>
+								</p>
+								<p>
+									<strong>Telefone:</strong> <span id="modalTelefoneCliente"></span>
+								</p>
+								<p>
+									<strong>Email:</strong> <span id="modalEmailCliente"></span>
+								</p>
+							</div>
+						</div>
+					</div>
 
-                <div class="bg-white p-4 rounded shadow">
-                    <h5 class="text-center mb-3">Itens do Pedido</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Quantidade</th>
-                                    <th>Preço Unitário</th>
-                                    <th>Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalItensTableBody">
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">Carregando itens...</td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="3" class="text-end">Total Itens:</th>
-                                    <th id="modalTotalItens">R$ 0,00</th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                </div>
+					<div class="bg-white p-4 rounded shadow">
+						<h5 class="text-center mb-3">Itens do Pedido</h5>
+						<div class="table-responsive">
+							<table class="table table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Item</th>
+										<th>Quantidade</th>
+										<th>Preço Unitário</th>
+										<th>Subtotal</th>
+									</tr>
+								</thead>
+								<tbody id="modalItensTableBody">
+									<tr>
+										<td colspan="4" class="text-center text-muted">Carregando
+											itens...</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<th colspan="3" class="text-end">Total Itens:</th>
+										<th id="modalTotalItens">R$ 0,00</th>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<!-- FORMULÁRIO no footer -->
+				<form action="atualizaPedido" method="post">
+					<div class="modal-footer">
+						<input type="hidden" name="acao" value="pedido"> <input
+							type="hidden" name="idPedido" id="formIdPedido">
+
+						<div class="d-flex align-items-center flex-grow-1 me-3">
+							<label for="formStatus" class="form-label mb-0 me-2 text-nowrap">Novo
+								Status:</label> <select class="form-select me-2" name="status"
+								id="formStatus">
+								<option value="Pendente">Pendente</option>
+								<option value="Em Preparo">Em Preparo</option>
+								<option value="Em Rota de Entrega">Em Rota de Entrega</option>
+								<option value="Entregue">Entregue</option>
+								<option value="Reprovado">Reprovado</option>
+							</select> <label for="formObservacoes"
+								class="form-label mb-0 me-2 text-nowrap">Observações:</label>
+							<textarea class="form-control me-2" name="observacoes"
+								id="formObservacoes" rows="1"
+								placeholder="Adicionar observações"></textarea>
+						</div>
+
+						<button type="submit" class="btn btn-success me-2">Atualizar
+							Pedido</button>
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">Fechar</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+<div class="modal fade" tabindex="-1" id="atualizarStatus">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="atualizaPedido" method="post">
+        <div class="modal-header">
+          <h5 class="modal-title">Atualizar pedido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
+        <div class="modal-body">
+          <p>Deseja passar o seu pedido para uma próxima etapa?</p>
+
+          <input type="hidden" name="acao" value="status">
+          <input type="hidden" name="idPedido" id="statusModalIdPedido">
+
+          <label for="statusModalStatus" class="form-label mb-0 me-2 text-nowrap">Novo Status:</label>
+          <select class="form-select me-2" name="status" id="statusModalStatus">
+              <option value="Pendente">Pendente</option>
+              <option value="Em Preparo">Em Preparo</option>
+              <option value="Em Rota de Entrega">Em Rota de Entrega</option>
+              <option value="Entregue">Entregue</option>
+              <option value="Reprovado">Reprovado</option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
+          <button type="submit" class="btn btn-primary">Sim</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
-       
 
 
- <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Inicializa o modal uma vez para ser reutilizado
-            const gereciarPedidoModal = new bootstrap.Modal(document.getElementById('gereciarPedido'));
-            const modalItensTableBody = document.getElementById("modalItensTableBody");
 
-            /**
-             * Função que lida com o clique no botão "Detalhes" do pedido.
-             * Faz a requisição AJAX e preenche o modal.
-             */
-          
-            function adicionarListenersAosBotoesDetalhes() {
-                // Remove listeners anteriores para evitar duplicação (importante se a tabela for recarregada via AJAX)
-                document.querySelectorAll('.visualizar-pedido').forEach(button => {
-                    button.removeEventListener('click', handleDetalhesClick);
-                });
-                // Adiciona o listener a todos os botões com a classe 'visualizar-pedido'
-                document.querySelectorAll('.visualizar-pedido').forEach(button => {
-                    button.addEventListener('click', handleDetalhesClick);
-                });
-            }
-
-            /**
-             * Função para atualizar os cartões de resumo com base na lista de pedidos.
-             */
-            function atualizarCartoes(pedidos) {
-                let totalPedidosEfetuados = 0;
-                let totalPedidosPendentes = 0;
-                let totalPedidosEmPreparacao = 0;
-                let totalPedidosEmEntrega = 0;
-                let totalPedidosReprovados = 0;
-                const clientesComPedidos = new Set();
-
-                if (pedidos && pedidos.length > 0) {
-                    pedidos.forEach(pedido => {
-                        totalPedidosEfetuados++; // Todos os pedidos são considerados "efetuados"
-                        if (pedido.status === 'PENDENTE') {
-                            totalPedidosPendentes++;
-                        } else if (pedido.status === 'EM PREPARAÇÃO') {
-                            totalPedidosEmPreparacao++;
-                        } else if (pedido.status === 'EM ROTA DE ENTREGA') {
-                            totalPedidosEmEntrega++;
-                        } else if (pedido.status === 'REPROVADO') {
-                            totalPedidosReprovados++;
-                        }
-                        if (pedido.clientepedido && pedido.clientepedido.nome) {
-                            clientesComPedidos.add(pedido.clientepedido.nome);
-                        }
-                    });
-                }
-
-                document.getElementById('totalPedidosEfetuados').textContent = totalPedidosEfetuados;
-                document.getElementById('totalPedidosPendentes').textContent = totalPedidosPendentes;
-                document.getElementById('totalPedidosEmPreparacao').textContent = totalPedidosEmPreparacao;
-                document.getElementById('totalPedidosEmEntrega').textContent = totalPedidosEmEntrega;
-                document.getElementById('totalPedidosReprovados').textContent = totalPedidosReprovados;
-                document.getElementById('totalClientesPedidos').textContent = clientesComPedidos.size;
-            }
-
-            /**
-             * Função para carregar e atualizar a tabela e os cartões via AJAX.
-             */
-            function carregarEAtualizarPedidosViaAjax() {
-                console.log("Atualizando pedidos via AJAX...");
-                fetch('getPedidosJson.jsp') // O endpoint que retorna o JSON dos pedidos
-                    .then(response => {
-                        if (!response.ok) {
-                            if (response.status === 401) {
-                                window.location.href = 'LoginExpirou.html'; // Redireciona em caso de sessão expirada
-                                return Promise.reject('Sessão expirada. Redirecionando...');
-                            }
-                            throw new Error('Erro ao carregar os pedidos: ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(pedidos => {
-                        console.log("Pedidos recebidos via AJAX:", pedidos);
-                        const tbody = document.getElementById('pedidosTableBody');
-                        tbody.innerHTML = ''; // Limpa a tabela antes de adicionar os novos dados
-
-                        if (pedidos && pedidos.length > 0) {
-                            pedidos.forEach(pedido => {
-                                const row = tbody.insertRow();
-                                row.insertCell().textContent = pedido.idPedido;
-                                row.insertCell().textContent = pedido.clientepedido ? pedido.clientepedido.nome : '-';
-                                row.insertCell().textContent = pedido.dataPeedido;
-                                row.insertCell().textContent = pedido.status;
-                                row.insertCell().textContent = 'R$ ' + (pedido.totalPedido ? pedido.totalPedido.toFixed(2).replace('.', ',') : '0,00'); // Formata o valor
-                                row.insertCell().textContent = pedido.observacoes && pedido.observacoes !== "" ? pedido.observacoes : '-';
-                                row.insertCell().textContent = pedido.formapagamento && pedido.formapagamento !== "" ? pedido.formapagamento : '-';
-                                
-                                // Adiciona o botão de detalhes novamente, pois o tbody foi limpo
-                                const acoesCell = row.insertCell();
-                                const detalhesButton = document.createElement('button');
-                                detalhesButton.type = 'button';
-                                detalhesButton.className = 'btn btn-sm btn-info visualizar-pedido';
-                                detalhesButton.setAttribute('data-id-pedido', pedido.idPedido);
-                                detalhesButton.setAttribute('data-bs-toggle', 'modal');
-                                detalhesButton.setAttribute('data-bs-target', '#gereciarPedido');
-                                detalhesButton.innerHTML = '<i class="bi bi-eye"></i> Detalhes';
-                                acoesCell.appendChild(detalhesButton);
-                            });
-                        } else {
-                            const row = tbody.insertRow();
-                            const cell = row.insertCell();
-                            cell.colSpan = 8; // Ajuste o colspan para o número correto de colunas
-                            cell.classList.add('text-center');
-                            cell.textContent = 'Nenhum pedido encontrado para hoje.';
-                        }
-
-                        // Atualiza os cartões com os dados recém-carregados
-                        atualizarCartoes(pedidos);
-                        // Adiciona listeners aos novos botões gerados dinamicamente
-                        adicionarListenersAosBotoesDetalhes(); 
-                    })
-                    .catch(error => {
-                        console.error('Erro ao buscar pedidos via AJAX:', error);
-                        // Opcional: exibir uma mensagem de erro na interface
-                    });
-            }
-
-            // --- Lógica de Inicialização ---
-            
-            // No carregamento inicial, já temos os dados no JSP.
-            // Extraímos os dados da tabela já renderizada para popular os cartões.
-            const initialPedidosData = [];
-            const tbodyInitial = document.getElementById('pedidosTableBody');
-            // Verifica se há pedidos renderizados na tabela
-            if (tbodyInitial && tbodyInitial.rows.length > 0 && tbodyInitial.rows[0].cells[0].colSpan !== 8) {
-                for (let i = 0; i < tbodyInitial.rows.length; i++) {
-                    const row = tbodyInitial.rows[i];
-                    initialPedidosData.push({
-                        idPedido: row.cells[0].textContent,
-                        clientepedido: { nome: row.cells[1].textContent },
-                        dataPeedido: row.cells[2].textContent,
-                        status: row.cells[3].textContent,
-                        totalPedido: parseFloat(row.cells[4].textContent.replace('R$ ', '').replace(',', '.')), // Converte para número
-                        observacoes: row.cells[5].textContent === '-' ? '' : row.cells[5].textContent,
-                        formapagamento: row.cells[6].textContent === '-' ? '' : row.cells[6].textContent
-                    });
-                }
-            }
-            atualizarCartoes(initialPedidosData);
-
-            // Adiciona listeners aos botões de detalhes já existentes no carregamento inicial
-            adicionarListenersAosBotoesDetalhes();
-
-            // Em seguida, configure o intervalo para futuras atualizações via AJAX (se desejado).
-            // setInterval(carregarEAtualizarPedidosViaAjax, 30000); // Atualiza a cada 30 segundos
-        });
-    </script>
-    
-    
 <script>
-// Função principal para lidar com o clique nos botões de detalhes do pedido
-function handleDetalhesClick() {
-    const idDoPedidoParaRequisicao = this.getAttribute('data-id-pedido');
-    const modalItensTableBody = document.getElementById("modalItensTableBody");
-    const modalElement = document.getElementById('gereciarPedido');
+    document.addEventListener("DOMContentLoaded", function () {
+        // Obtenha referências aos elementos do DOM que serão usados.
+        // O modal gereciarPedido é gerenciado internamente pela handleDetalhesClick.
+        // Já pegamos as referências dos campos do formulário aqui para reuso.
+        const formIdPedido = document.getElementById("formIdPedido");
+        const formStatus = document.getElementById("formStatus");
+        const formObservacoes = document.getElementById("formObservacoes");
 
-    // --- Ajuste para Gerenciamento do Modal ---
-    // Verifica se já existe uma instância do modal.
-    let gereciarPedidoModal = bootstrap.Modal.getInstance(modalElement);
+        // --- SUA FUNÇÃO handleDetalhesClick() COM AS ADIÇÕES NECESSÁRIAS ---
+        function handleDetalhesClick() {
+            const idDoPedidoParaRequisicao = this.getAttribute('data-id-pedido');
+            const modalItensTableBody = document.getElementById("modalItensTableBody");
+            const modalElement = document.getElementById('gereciarPedido');
 
-    // Se não existir, cria uma nova instância.
-    if (!gereciarPedidoModal) {
-        gereciarPedidoModal = new bootstrap.Modal(modalElement);
-    }
-    // ------------------------------------------
+            // --- Sua lógica original de Gerenciamento do Modal ---
+            let gereciarPedidoModal = bootstrap.Modal.getInstance(modalElement);
 
-    // Exibe mensagem de carregando
-    modalItensTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Carregando itens...</td></tr>`;
-    document.getElementById("modalTotalItens").innerText = "R$ 0,00";
-
-    // Mostra o modal (utiliza a instância existente ou a recém-criada)
-    gereciarPedidoModal.show();
-
-    const urlDeRequisicao = "selecionarPedido?id=" + encodeURIComponent(idDoPedidoParaRequisicao);
-
-    fetch(urlDeRequisicao)
-        .then(response => {
-            if (!response.ok) {
-                if (response.status === 401) {
-                    window.location.href = 'LoginExpirou.html';
-                    return Promise.reject('Sessão expirada.');
-                }
-                return response.text().then(text => { 
-                    throw new Error(text || `Erro HTTP ${response.status}: ${response.statusText}`); 
-                });
+            if (!gereciarPedidoModal) {
+                gereciarPedidoModal = new bootstrap.Modal(modalElement);
             }
-            return response.json();
-        })
-        .then(itensPedido => {
-            console.log("Detalhes do pedido recebidos com sucesso:", itensPedido);
+            // ------------------------------------------
 
-            if (itensPedido && itensPedido.length > 0) {
-                const primeiroItem = itensPedido[0];
-                const pedidoInfo = primeiroItem.pedido || {};
-                const clienteInfo = pedidoInfo.clientepedido || {};
-
-                // Preenchimento de informações gerais do pedido e cliente
-                document.getElementById("modalIdPedido").innerText = pedidoInfo.idPedido || '-';
-                document.getElementById("modalDataPedido").innerText = pedidoInfo.dataPeedido || '-';
-                document.getElementById("modalStatusPedido").innerText = pedidoInfo.status || '-';
-
-                const totalPedidoValue = pedidoInfo.totalPedido || 0;
-                const totalPedidoFormatado = typeof totalPedidoValue === 'number'
-                    ? totalPedidoValue.toFixed(2).replace('.', ',')
-                    : '0,00';
-                document.getElementById("modalTotalPedido").innerText = 'R$ ' + totalPedidoFormatado;
-
-                document.getElementById("modalFormaPagamento").innerText = pedidoInfo.formapagamento || "-";
-                document.getElementById("modalObservacoes").innerText = pedidoInfo.observacoes || "-";
-
-                document.getElementById("modalNomeCliente").innerText = clienteInfo.nome || '-';
-                document.getElementById("modalEnderecoCliente").innerText = clienteInfo.endereco || '-';
-                document.getElementById("modalNumeroCliente").innerText = clienteInfo.numero || "-";
-                document.getElementById("modalEstadoCliente").innerText = clienteInfo.uf || "-";
-                document.getElementById("modalTelefoneCliente").innerText = clienteInfo.telefone || "-";
-                document.getElementById("modalEmailCliente").innerText = clienteInfo.email || "-";
-
-                // Limpa a tabela antes de inserir
-                modalItensTableBody.innerHTML = "";
-                let totalItens = 0;
-
-                // Loop para preencher a tabela de itens
-                itensPedido.forEach(item => {
-                    const descricao = item.produto?.descricao || '-';
-                    
-                    const quantidade = parseFloat(item.quantidade) || 0;
-                    const precoUnitario = parseFloat(item.precoUnitario) || 0;
-                    
-                    const subtotal = quantidade * precoUnitario;
-                    totalItens += subtotal;
-
-                    const precoFormatado = precoUnitario.toFixed(2).replace('.', ',');
-                    const subtotalFormatado = subtotal.toFixed(2).replace('.', ',');
-
-                    // Criação dos elementos da linha da tabela
-                    const tr = document.createElement('tr');
-
-                    const tdDescricao = document.createElement('td');
-                    tdDescricao.textContent = descricao;
-
-                    const tdQtd = document.createElement('td');
-                    tdQtd.textContent = quantidade;
-
-                    const tdPreco = document.createElement('td');
-                    tdPreco.textContent = "R$ " + precoFormatado; 
-
-                    const tdSubtotal = document.createElement('td');
-                    tdSubtotal.textContent = "R$ " + subtotalFormatado; 
-
-                    tr.appendChild(tdDescricao);
-                    tr.appendChild(tdQtd);
-                    tr.appendChild(tdPreco);
-                    tr.appendChild(tdSubtotal);
-
-                    modalItensTableBody.appendChild(tr);
-                });
-
-                // Atualiza o total de itens no rodapé da tabela
-                document.getElementById("modalTotalItens").innerText = "R$ " + totalItens.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-
-            } else {
-                // Caso não haja itens
-                modalItensTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum item encontrado para este pedido.</td></tr>`;
-                document.getElementById("modalTotalItens").innerText = "R$ 0,00";
-            }
-        })
-        .catch(error => {
-            // Tratamento de erros
-            console.error('Erro ao carregar detalhes do pedido:', error);
-            modalItensTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erro ao carregar detalhes: ${error.message || 'Erro desconhecido'}</td></tr>`;
+            // Exibe mensagem de carregando
+            modalItensTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Carregando itens...</td></tr>`;
             document.getElementById("modalTotalItens").innerText = "R$ 0,00";
-            alert("Ocorreu um erro ao carregar os detalhes do pedido. Verifique o console.");
-        });
-}
 
+            // Mostra o modal (utiliza a instância existente ou a recém-criada)
+            gereciarPedidoModal.show();
+
+            const urlDeRequisicao = "selecionarPedido?id=" + encodeURIComponent(idDoPedidoParaRequisicao);
+
+            fetch(urlDeRequisicao)
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = 'LoginExpirou.html';
+                            return Promise.reject('Sessão expirada.');
+                        }
+                        return response.text().then(text => {
+                            throw new Error(text || `Erro HTTP ${response.status}: ${response.statusText}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(itensPedido => {
+                    console.log("Detalhes do pedido recebidos com sucesso:", itensPedido);
+
+                    if (itensPedido && itensPedido.length > 0) {
+                        const primeiroItem = itensPedido[0];
+                        const pedidoInfo = primeiroItem.pedido || {};
+                        const clienteInfo = pedidoInfo.clientepedido || {};
+
+                        // Preenchimento de informações gerais do pedido e cliente
+                        document.getElementById("modalIdPedido").innerText = pedidoInfo.idPedido || '-';
+                        document.getElementById("modalDataPedido").innerText = pedidoInfo.dataPeedido || '-';
+                        document.getElementById("modalStatusPedido").innerText = pedidoInfo.status || '-';
+
+                        const totalPedidoValue = pedidoInfo.totalPedido || 0;
+                        const totalPedidoFormatado = typeof totalPedidoValue === 'number'
+                            ? totalPedidoValue.toFixed(2).replace('.', ',')
+                            : '0,00';
+                        document.getElementById("modalTotalPedido").innerText = 'R$ ' + totalPedidoFormatado;
+
+                        document.getElementById("modalFormaPagamento").innerText = pedidoInfo.formapagamento || "-";
+                        document.getElementById("modalObservacoes").innerText = pedidoInfo.observacoes || "-";
+
+                        document.getElementById("modalNomeCliente").innerText = clienteInfo.nome || '-';
+                        document.getElementById("modalEnderecoCliente").innerText = clienteInfo.endereco || '-';
+                        document.getElementById("modalNumeroCliente").innerText = clienteInfo.numero || "-";
+                        document.getElementById("modalEstadoCliente").innerText = clienteInfo.uf || "-";
+                        document.getElementById("modalTelefoneCliente").innerText = clienteInfo.telefone || "-";
+                        document.getElementById("modalEmailCliente").innerText = clienteInfo.email || "-";
+
+                        // Limpa a tabela antes de inserir (SUA LÓGICA FUNCIONAL AQUI!)
+                        modalItensTableBody.innerHTML = "";
+                        let totalItens = 0;
+
+                        // Loop para preencher a tabela de itens (SUA LÓGICA FUNCIONAL AQUI!)
+                        itensPedido.forEach(item => {
+                            const descricao = item.produto?.descricao || '-';
+
+                            const quantidade = parseFloat(item.quantidade) || 0;
+                            const precoUnitario = parseFloat(item.precoUnitario) || 0;
+
+                            const subtotal = quantidade * precoUnitario;
+                            totalItens += subtotal;
+
+                            const precoFormatado = precoUnitario.toFixed(2).replace('.', ',');
+                            const subtotalFormatado = subtotal.toFixed(2).replace('.', ',');
+
+                            // Criação dos elementos da linha da tabela (SUA LÓGICA FUNCIONAL AQUI!)
+                            const tr = document.createElement('tr');
+
+                            const tdDescricao = document.createElement('td');
+                            tdDescricao.textContent = descricao;
+
+                            const tdQtd = document.createElement('td');
+                            tdQtd.textContent = quantidade;
+
+                            const tdPreco = document.createElement('td');
+                            tdPreco.textContent = "R$ " + precoFormatado;
+
+                            const tdSubtotal = document.createElement('td');
+                            tdSubtotal.textContent = "R$ " + subtotalFormatado;
+
+                            tr.appendChild(tdDescricao);
+                            tr.appendChild(tdQtd);
+                            tr.appendChild(tdPreco);
+                            tr.appendChild(tdSubtotal);
+
+                            modalItensTableBody.appendChild(tr);
+                        });
+
+                        // Atualiza o total de itens no rodapé da tabela
+                        document.getElementById("modalTotalItens").innerText = "R$ " + totalItens.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                        // *** LINHAS ADICIONADAS PARA PREENCHER OS CAMPOS DO FORMULÁRIO ***
+                        // Isso garante que os valores de status e observações sejam os mais atualizados do banco de dados
+                        // E o idPedido é fundamental para a submissão do formulário.
+                        if (formIdPedido) {
+                            formIdPedido.value = pedidoInfo.idPedido || ''; // Garante o ID no campo hidden do form
+                        }
+                        if (formStatus) {
+                            formStatus.value = pedidoInfo.status || ''; // Define o status atual no select
+                        }
+                        if (formObservacoes) {
+                            formObservacoes.value = pedidoInfo.observacoes || ''; // Define as observações atuais na textarea
+                        }
+                        // *******************************************************************
+
+                    } else {
+                        // Caso não haja itens
+                        modalItensTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum item encontrado para este pedido.</td></tr>`;
+                        document.getElementById("modalTotalItens").innerText = "R$ 0,00";
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar detalhes do pedido:', error);
+                    modalItensTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erro ao carregar detalhes: ${error.message || 'Erro desconhecido'}</td></tr>`;
+                    document.getElementById("modalTotalItens").innerText = "R$ 0,00";
+                    alert("Ocorreu um erro ao carregar os detalhes do pedido. Verifique o console.");
+                });
+        }
+        // --- FIM DA FUNÇÃO handleDetalhesClick() ---
+
+
+        // --- OUTRAS FUNÇÕES AUXILIARES (Consolidadas e sem duplicação) ---
+
+        /**
+         * Função que garante que todos os botões de detalhes tenham o listener
+         * É chamada no DOMContentLoaded e após cada atualização da tabela via AJAX.
+         */
+        function adicionarListenersAosBotoesDetalhes() {
+            document.querySelectorAll('.visualizar-pedido').forEach(button => {
+                button.removeEventListener('click', handleDetalhesClick); // Remove para evitar listeners duplicados
+                button.addEventListener('click', handleDetalhesClick);
+            });
+        }
+
+        /**
+         * Função para atualizar os cartões de resumo com base na lista de pedidos.
+         */
+        function atualizarCartoes(pedidos) {
+            let totalPedidosEfetuados = 0;
+            let totalPedidosPendentes = 0;
+            let totalPedidosEmPreparacao = 0;
+            let totalPedidosEmEntrega = 0;
+            let totalPedidosReprovados = 0;
+            const clientesComPedidos = new Set();
+
+            if (pedidos && pedidos.length > 0) {
+                pedidos.forEach(pedido => {
+                    totalPedidosEfetuados++;
+                    const statusUpper = pedido.status ? pedido.status.toUpperCase() : '';
+
+                    if (statusUpper === 'PENDENTE') {
+                        totalPedidosPendentes++;
+                    } else if (statusUpper === 'EM PREPARO' || statusUpper === 'EM PREPARAÇÃO') {
+                        totalPedidosEmPreparacao++;
+                    } else if (statusUpper === 'EM ROTA DE ENTREGA') {
+                        totalPedidosEmEntrega++;
+                    } else if (statusUpper === 'REPROVADO') {
+                        totalPedidosReprovados++;
+                    }
+                    if (pedido.clientepedido && pedido.clientepedido.nome) {
+                        clientesComPedidos.add(pedido.clientepedido.nome);
+                    }
+                });
+            }
+
+            document.getElementById('totalPedidosEfetuados').textContent = totalPedidosEfetuados;
+            document.getElementById('totalPedidosPendentes').textContent = totalPedidosPendentes;
+            document.getElementById('totalPedidosEmPreparacao').textContent = totalPedidosEmPreparacao;
+            document.getElementById('totalPedidosEmEntrega').textContent = totalPedidosEmEntrega;
+            document.getElementById('totalPedidosReprovados').textContent = totalPedidosReprovados;
+            document.getElementById('totalClientesPedidos').textContent = clientesComPedidos.size;
+        }
+
+        /**
+         * Função para carregar e atualizar a tabela e os cartões via AJAX.
+         * É executada periodicamente e no carregamento inicial.
+         */
+        function carregarEAtualizarPedidosViaAjax() {
+            console.log("Atualizando pedidos via AJAX...");
+            fetch('getPedidosJson.jsp')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            window.location.href = 'LoginExpirou.html';
+                            return Promise.reject('Sessão expirada. Redirecionando...');
+                        }
+                        throw new Error('Erro ao carregar os pedidos: ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(pedidos => {
+                    console.log("Pedidos recebidos via AJAX:", pedidos);
+                    const tbody = document.getElementById('pedidosTableBody');
+                    tbody.innerHTML = ''; // Limpa a tabela antes de adicionar os novos dados
+
+                    if (pedidos && pedidos.length > 0) {
+                        pedidos.forEach(pedido => {
+                            const row = tbody.insertRow();
+                            row.insertCell().textContent = pedido.idPedido;
+                            row.insertCell().textContent = pedido.clientepedido ? pedido.clientepedido.nome : '-';
+                            row.insertCell().textContent = pedido.dataPeedido;
+                            row.insertCell().textContent = pedido.status;
+                            row.insertCell().textContent = 'R$ ' + (pedido.totalPedido ? pedido.totalPedido.toFixed(2).replace('.', ',') : '0,00');
+                            row.insertCell().textContent = pedido.observacoes && pedido.observacoes !== "" ? pedido.observacoes : '-';
+                            row.insertCell().textContent = pedido.formapagamento && pedido.formapagamento !== "" ? pedido.formapagamento : '-';
+
+                            const acoesCell = row.insertCell();
+                            const detalhesButton = document.createElement('button');
+                            detalhesButton.type = 'button';
+                            detalhesButton.className = 'btn btn-sm btn-info visualizar-pedido me-1';
+                            detalhesButton.setAttribute('data-id-pedido', pedido.idPedido);
+                            detalhesButton.setAttribute('data-bs-toggle', 'modal');
+                            detalhesButton.setAttribute('data-bs-target', '#gereciarPedido');
+                            detalhesButton.innerHTML = '<i class="bi bi-eye"></i> Detalhes';
+                            acoesCell.appendChild(detalhesButton);
+
+                            const atualizarStatusButton = document.createElement('button');
+                            atualizarStatusButton.type = 'button';
+                            atualizarStatusButton.className = 'btn btn-sm btn-success btn-atualizar-status';
+                            atualizarStatusButton.setAttribute('data-id-pedido', pedido.idPedido);
+                            atualizarStatusButton.setAttribute('data-novo-status', 'Em Preparo');
+                            atualizarStatusButton.setAttribute('data-bs-toggle', 'modal');
+                            atualizarStatusButton.setAttribute('data-bs-target', '#atualizarStatus');
+                            atualizarStatusButton.innerHTML = '<i class="bi bi-arrow-up-circle"></i> Atualizar Status';
+                            acoesCell.appendChild(atualizarStatusButton);
+                        });
+                    } else {
+                        const row = tbody.insertRow();
+                        const cell = row.insertCell();
+                        cell.colSpan = 8;
+                        cell.classList.add('text-center');
+                        cell.textContent = 'Nenhum pedido encontrado para hoje.';
+                    }
+
+                    atualizarCartoes(pedidos);
+                    // Re-adiciona listeners para os novos botões gerados dinamicamente!
+                    adicionarListenersAosBotoesDetalhes();
+                    // Adiciona listeners para os botões de atualização de status também
+                    adicionarListenersAosBotoesAtualizarStatus();
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar pedidos via AJAX:', error);
+                });
+        }
+
+        // --- Listener para o modal "atualizarStatus" ---
+        function adicionarListenersAosBotoesAtualizarStatus() {
+            document.querySelectorAll('.btn-atualizar-status').forEach(btn => {
+                btn.removeEventListener('click', handleAtualizarStatusClick);
+                btn.addEventListener('click', handleAtualizarStatusClick);
+            });
+        }
+
+        function handleAtualizarStatusClick() {
+            const idPedido = this.dataset.idPedido;
+            // O novoStatus aqui é um valor padrão do botão, você pode querer preencher com o status atual do pedido
+            const novoStatusDoBotao = this.dataset.novoStatus;
+
+            document.getElementById('statusModalIdPedido').value = idPedido;
+
+            // Opcional: preencher o select de status do modal de atualização com o status atual do pedido
+            const statusAtualDaLinha = this.closest('tr')?.querySelector('td:nth-child(4)')?.textContent;
+            if (document.getElementById('statusModalStatus')) {
+                 document.getElementById('statusModalStatus').value = statusAtualDaLinha || '';
+            }
+        }
+
+
+        // --- Lógica de Inicialização no DOMContentLoaded ---
+
+        // 1. Carrega os cartões com os dados que já estão na tabela (se houver)
+        const initialPedidosData = [];
+        const tbodyInitial = document.getElementById('pedidosTableBody');
+        if (tbodyInitial && tbodyInitial.rows.length > 0 && tbodyInitial.rows[0].cells[0].colSpan !== 8) {
+            for (let i = 0; i < tbodyInitial.rows.length; i++) {
+                const row = tbodyInitial.rows[i];
+                initialPedidosData.push({
+                    idPedido: row.cells[0].textContent,
+                    clientepedido: { nome: row.cells[1].textContent },
+                    dataPeedido: row.cells[2].textContent,
+                    status: row.cells[3].textContent,
+                    totalPedido: parseFloat(row.cells[4].textContent.replace('R$ ', '').replace(',', '.')),
+                    observacoes: row.cells[5].textContent === '-' ? '' : row.cells[5].textContent,
+                    formapagamento: row.cells[6].textContent === '-' ? '' : row.cells[6].textContent
+                });
+            }
+        }
+        atualizarCartoes(initialPedidosData);
+
+        // 2. Adiciona listeners aos botões de detalhes e status que já existem na página (se renderizados inicialmente pelo JSP)
+        adicionarListenersAosBotoesDetalhes();
+        adicionarListenersAosBotoesAtualizarStatus();
+
+        // 3. Ativa a atualização periódica via AJAX para a tabela e cartões
+        setInterval(carregarEAtualizarPedidosViaAjax, 10000); // Atualiza a cada 10 segundos
+    });
 </script>
 </body>
 </html>

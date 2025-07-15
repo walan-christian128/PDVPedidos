@@ -233,4 +233,40 @@ public class PedidosDAO {
             }
         }
     } 
+    
+    public void atualizaPedido(Pedidos ped){
+    String sql ="UPDATE pedidos set status=?,observacoes=? where id_pedido=?";   
+    
+    try {
+		PreparedStatement stmt = con.prepareStatement(sql);
+		
+		stmt.setString(1, ped.getStatus());
+		stmt.setString(2,ped.getObservacoes());
+		stmt.setInt(3, ped.getIdPedido());
+		
+		stmt.executeUpdate();
+		stmt.close();
+	} catch (Exception e) {
+		// TODO: handle exception
+	}
+    	
+    	
+    }
+    public void atualizaPedidoStatus(Pedidos ped){
+        String sql ="UPDATE pedidos set status=? where id_pedido=?";   
+        
+        try {
+    		PreparedStatement stmt = con.prepareStatement(sql);
+    		
+    		stmt.setString(1, ped.getStatus());
+    		stmt.setInt(2, ped.getIdPedido());
+    		
+    		stmt.executeUpdate();
+    		stmt.close();
+    	} catch (Exception e) {
+    		// TODO: handle exception
+    	}
+        	
+        	
+        }
 }
