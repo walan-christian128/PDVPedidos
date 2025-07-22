@@ -302,23 +302,76 @@ function removerProduto(id) {
 
 
 <script>
-    // Adiciona um listener para o botão "Finalizar Pedido" no modal
     document.addEventListener('DOMContentLoaded', function() {
         const btnFinalizarPedido = document.getElementById('btnFinalizarPedido');
         const formFinalizarPedido = document.getElementById('formFinalizarPedido');
         const subtotalCarrinhoDisplay = document.getElementById('subtotalCarrinho');
-        const hiddenSubtotalInput = document.getElementById('hiddenSubtotal'); // O novo input hidden
+        const hiddenSubtotalInput = document.getElementById('hiddenSubtotal');
 
         if (btnFinalizarPedido && formFinalizarPedido && subtotalCarrinhoDisplay && hiddenSubtotalInput) {
             btnFinalizarPedido.addEventListener('click', function() {
-                // 1. Obter o valor atual do subtotal formatado
-                let subtotalText = subtotalCarrinhoDisplay.value; // Ex: "R$ 150,75"
+                // *** NOVO DEBUG: O QUE O JAVASCRIPT ESTÁ LENDO DO HTML? ***
+                let subtotalText = subtotalCarrinhoDisplay.value; 
+                console.log("DEBUG (JS) ANTES DA MANIPULAÇÃO: subtotalCarrinhoDisplay.value = '" + subtotalText + "'");
 
-                // 2. Limpar o valor: remover "R$", remover espaços, substituir vírgula por ponto
-                subtotalText = subtotalText.replace('R$', '').trim().replace(',', '.');
+                // 2. Pré-limpeza: Remover "R$" e espaços
+                subtotalText = subtotalText.replace('R$', '').trim(); 
+                console.log("DEBUG (JS) APÓS REMOVER 'R$': '" + subtotalText + "'");
 
-                // 3. Atribuir o valor limpo ao input hidden
+                // --- Lógica de normalização ---
+
+                let decimalSeparator = '';
+                // Simplificação: Se houver vírgula, use-a como separador decimal. Caso contrário, use ponto.
+                if (subtotalText.includes(',')) {
+                    decimalSeparator = ',';
+                } else if (subtotalText.includes('.')) {
+                    // Cuidado: pode ser um separador de milhar ou decimal.
+                    // Para strings como '1.260.00', precisamos ser mais específicos.
+                    // Se a string contiver mais de um '.', assumimos que todos, exceto o último, são milhares.
+                    if ((subtotalText.match(/\./g) || []).length > 1) { // Conta o número de pontos
+                         // Ex: '1.260.00'
+                         let parts = subtotalText.split('.');
+                         let lastPart = parts.pop(); // Remove a última parte (assumido decimal)
+                         subtotalText = parts.join('') + '.' + lastPart; // Junta o resto e adiciona o decimal
+                         console.log("DEBUG (JS) CORREÇÃO MÚLTIPLOS PONTOS: '" + subtotalText + "'");
+                    }
+                    decimalSeparator = '.'; // Último ponto é o decimal
+                } else {
+                    // Sem ponto ou vírgula, assume que é um número inteiro
+                    decimalSeparator = '';
+                }
+
+
+                if (decimalSeparator === ',') {
+                    // Se o separador decimal é vírgula (formato BR), remove pontos e troca vírgula por ponto
+                    subtotalText = subtotalText.replace(/\./g, ''); // Remove separadores de milhar (pontos)
+                    subtotalText = subtotalText.replace(',', '.');   // Troca vírgula decimal por ponto
+                    console.log("DEBUG (JS) PÓS TRATAMENTO (VÍRGULA): '" + subtotalText + "'");
+                } else if (decimalSeparator === '.') {
+                    // Se já é ponto ou já foi tratado para ter um único ponto
+                    // Não há mais nada a fazer, a string já deve estar no formato 'XXXX.YY'
+                    console.log("DEBUG (JS) PÓS TRATAMENTO (PONTO): '" + subtotalText + "'");
+                }
+                
+                // Fallback final para garantir que o resultado seja numérico e tenha um formato consistente.
+                // Isso é essencial se a string ainda for inválida para BigDecimal.
+                // `replace(',', '.')` no `parseFloat` é uma segurança extra caso o decimalSeparator seja vazio ou mal inferido.
+                let parsedValue = parseFloat(subtotalText); // Tenta parsear
+                if (isNaN(parsedValue)) {
+                    subtotalText = "0.00"; 
+                    console.error("ERRO (JS): Valor do subtotal não pôde ser normalizado para um número válido. Usando 0.00. String original para parseFloat: '" + subtotalText + "'");
+                } else {
+                    // Opcional: formatar para garantir 2 casas decimais, mesmo após o parseFloat
+                    // Isso é bom para consistência, mas BigDecimal no Java lida com precisão
+                    // subtotalText = parsedValue.toFixed(2);
+                }
+
+
+                // 3. Atribuir o valor limpo e formatado para o input hidden
                 hiddenSubtotalInput.value = subtotalText;
+
+                // Para depuração no console do navegador:
+                console.log("DEBUG (JS): Valor FINAL do hiddenSubtotal enviado para o Servlet:", hiddenSubtotalInput.value);
 
                 // 4. Submeter o formulário
                 formFinalizarPedido.submit();

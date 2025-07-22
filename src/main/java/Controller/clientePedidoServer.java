@@ -12,8 +12,7 @@ import java.io.IOException;
 
 import DAO.UsuarioDAO;
 import Model.Clientepedido;
-import Model.Empresa;
-import Model.Usuario;
+
 
 /**
  * Servlet implementation class clientePedidoServer

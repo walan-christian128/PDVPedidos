@@ -69,11 +69,8 @@ public class produtosServer extends HttpServlet {
 		
 		else if (action.equals("/updateProduto")) {
 			try {
-				listandoProduto(request, response);
-			} catch (ClassNotFoundException | ServletException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NamingException e) {
+				atualizarProduto(request, response);
+			} catch (ServletException | IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -270,7 +267,6 @@ public class produtosServer extends HttpServlet {
 				prod.setPreco_de_venda(Double.parseDouble(precoVendaStr));
 			}
 			
-			
 			try {
 				Part filePart = request.getPart("logo");
 				if (filePart != null && filePart.getSize() > 0) {
@@ -301,7 +297,13 @@ public class produtosServer extends HttpServlet {
 			}
 
 			dao.alterarProdutos(prod);
+			
 			response.sendRedirect("Produtos.jsp");
+			
+			System.out.println("Produto a ser atualizado:");
+			System.out.println("ID: " + prod.getId());
+			System.out.println("Descrição: " + prod.getDescricao());
+			System.out.println("Qtd Estoque: " + prod.getQtd_estoque());
 		} catch (NumberFormatException e) {
 			// Lide com o caso em que há um problema de formato numérico
 

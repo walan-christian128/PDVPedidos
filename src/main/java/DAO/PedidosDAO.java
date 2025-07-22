@@ -158,7 +158,8 @@ public class PedidosDAO {
                 + "ped.forma_pagamento as forma_pagamento "
                 + "FROM pedidos as ped "
                 + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "
-                + "WHERE DATE(ped.data_pedido) = CURDATE()"; 
+                + "WHERE DATE(ped.data_pedido) = CURDATE()"
+                + "AND ped.status = 'Pendente' "; 
 
         try (PreparedStatement stmt = con.prepareStatement(sql)) {
           
@@ -269,4 +270,361 @@ public class PedidosDAO {
         	
         	
         }
+ // Supondo que 'con' seja sua Connection
+    public List<Pedidos> pedidoEntregue() { // Removido 'Pedidos pedido' do parâmetro, pois você não precisa passar um objeto vazio
+    	 List<Pedidos> listaPedidos = new ArrayList<>();
+         String sql;
+
+         sql = "SELECT "
+                 + "ped.id_pedido as codigo_pedido, "
+         		+ "ped.total_pedido as total, "
+                 + "cli.nome as nome_cliente, "
+                 + "ped.clientepedido_id as codigo_cliente, "
+                 + "DATE_FORMAT(ped.data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada, "
+                 + "ped.status as status, "
+                 + "ped.observacoes as observacoes, "
+                 + "ped.forma_pagamento as forma_pagamento "
+                 + "FROM pedidos as ped "
+                 + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "
+                 + "where status = 'Entregue'"; 
+
+         try (PreparedStatement stmt = con.prepareStatement(sql)) {
+           
+             
+             try (ResultSet rs = stmt.executeQuery()) {
+                 int count = 0;
+                 while (rs.next()) {
+                     Pedidos pedido = new Pedidos();
+                     Clientepedido cliente = new Clientepedido();
+
+                     pedido.setIdPedido(rs.getInt("codigo_pedido"));
+                     cliente.setNome(rs.getString("nome_cliente"));
+                     cliente.setId(rs.getInt("codigo_cliente")); 
+
+                     pedido.setDataPeedido(rs.getString("data_formatada")); 
+                     pedido.setStatus(rs.getString("status"));
+                     pedido.setObservacoes(rs.getString("observacoes"));
+                     pedido.setFormapagamento(rs.getString("forma_pagamento"));
+                     pedido.setTotalPedido(rs.getDouble("total"));
+
+                     pedido.setClientepedido(cliente); 
+
+                     listaPedidos.add(pedido);
+                     count++; 
+                 }
+                 System.out.println("DEBUG_PEDIDO_DAO: Total de pedidos encontrados em listaTodosPedidosDoDia: " + count);
+             }
+         } catch (SQLException e) {
+             System.err.println("DEBUG_PEDIDO_DAO: ERRO ao listar todos os pedidos do dia: " + e.getMessage());
+             e.printStackTrace();
+         } finally {
+             try {
+                 if (con != null && !con.isClosed()) {
+                     con.close(); 
+                     System.out.println("DEBUG_PEDIDO_DAO: Conexão fechada após listaTodosPedidosDoDia.");
+                 }
+             } catch (SQLException e) {
+                 System.err.println("DEBUG_PEDIDO_DAO: ERRO ao fechar a conexão após listaTodosPedidosDoDia: " + e.getMessage());
+                 e.printStackTrace();
+             }
+         }
+        return listaPedidos;
+    }
+    
+    public List<Pedidos> pedidoPreparacao() { // Removido 'Pedidos pedido' do parâmetro, pois você não precisa passar um objeto vazio
+   	 List<Pedidos> listaPedidos = new ArrayList<>();
+        String sql;
+
+        sql = "SELECT "
+                + "ped.id_pedido as codigo_pedido, "
+        		+ "ped.total_pedido as total, "
+                + "cli.nome as nome_cliente, "
+                + "ped.clientepedido_id as codigo_cliente, "
+                + "DATE_FORMAT(ped.data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada, "
+                + "ped.status as status, "
+                + "ped.observacoes as observacoes, "
+                + "ped.forma_pagamento as forma_pagamento "
+                + "FROM pedidos as ped "
+                + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "
+                + "where status = 'Em Preparo'"; 
+
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+          
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                int count = 0;
+                while (rs.next()) {
+                    Pedidos pedido = new Pedidos();
+                    Clientepedido cliente = new Clientepedido();
+
+                    pedido.setIdPedido(rs.getInt("codigo_pedido"));
+                    cliente.setNome(rs.getString("nome_cliente"));
+                    cliente.setId(rs.getInt("codigo_cliente")); 
+
+                    pedido.setDataPeedido(rs.getString("data_formatada")); 
+                    pedido.setStatus(rs.getString("status"));
+                    pedido.setObservacoes(rs.getString("observacoes"));
+                    pedido.setFormapagamento(rs.getString("forma_pagamento"));
+                    pedido.setTotalPedido(rs.getDouble("total"));
+
+                    pedido.setClientepedido(cliente); 
+
+                    listaPedidos.add(pedido);
+                    count++; 
+                }
+                System.out.println("DEBUG_PEDIDO_DAO: Total de pedidos encontrados em listaTodosPedidosDoDia: " + count);
+            }
+        } catch (SQLException e) {
+            System.err.println("DEBUG_PEDIDO_DAO: ERRO ao listar todos os pedidos do dia: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (con != null && !con.isClosed()) {
+                    con.close(); 
+                    System.out.println("DEBUG_PEDIDO_DAO: Conexão fechada após listaTodosPedidosDoDia.");
+                }
+            } catch (SQLException e) {
+                System.err.println("DEBUG_PEDIDO_DAO: ERRO ao fechar a conexão após listaTodosPedidosDoDia: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+       return listaPedidos;
+   }
+    public List<Pedidos> pedidoReprovados() { // Removido 'Pedidos pedido' do parâmetro, pois você não precisa passar um objeto vazio
+      	 List<Pedidos> listaPedidos = new ArrayList<>();
+           String sql;
+
+           sql = "SELECT "
+                   + "ped.id_pedido as codigo_pedido, "
+           		+ "ped.total_pedido as total, "
+                   + "cli.nome as nome_cliente, "
+                   + "ped.clientepedido_id as codigo_cliente, "
+                   + "DATE_FORMAT(ped.data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada, "
+                   + "ped.status as status, "
+                   + "ped.observacoes as observacoes, "
+                   + "ped.forma_pagamento as forma_pagamento "
+                   + "FROM pedidos as ped "
+                   + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "
+                   + "where status = 'Reprovado'"; 
+
+           try (PreparedStatement stmt = con.prepareStatement(sql)) {
+             
+               
+               try (ResultSet rs = stmt.executeQuery()) {
+                   int count = 0;
+                   while (rs.next()) {
+                       Pedidos pedido = new Pedidos();
+                       Clientepedido cliente = new Clientepedido();
+
+                       pedido.setIdPedido(rs.getInt("codigo_pedido"));
+                       cliente.setNome(rs.getString("nome_cliente"));
+                       cliente.setId(rs.getInt("codigo_cliente")); 
+
+                       pedido.setDataPeedido(rs.getString("data_formatada")); 
+                       pedido.setStatus(rs.getString("status"));
+                       pedido.setObservacoes(rs.getString("observacoes"));
+                       pedido.setFormapagamento(rs.getString("forma_pagamento"));
+                       pedido.setTotalPedido(rs.getDouble("total"));
+
+                       pedido.setClientepedido(cliente); 
+
+                       listaPedidos.add(pedido);
+                       count++; 
+                   }
+                   System.out.println("DEBUG_PEDIDO_DAO: Total de pedidos encontrados em listaTodosPedidosDoDia: " + count);
+               }
+           } catch (SQLException e) {
+               System.err.println("DEBUG_PEDIDO_DAO: ERRO ao listar todos os pedidos do dia: " + e.getMessage());
+               e.printStackTrace();
+           } finally {
+               try {
+                   if (con != null && !con.isClosed()) {
+                       con.close(); 
+                       System.out.println("DEBUG_PEDIDO_DAO: Conexão fechada após listaTodosPedidosDoDia.");
+                   }
+               } catch (SQLException e) {
+                   System.err.println("DEBUG_PEDIDO_DAO: ERRO ao fechar a conexão após listaTodosPedidosDoDia: " + e.getMessage());
+                   e.printStackTrace();
+               }
+           }
+          return listaPedidos;
+      }
+    
+    public List<Pedidos> pedidoEmRota() { // Removido 'Pedidos pedido' do parâmetro, pois você não precisa passar um objeto vazio
+   	 List<Pedidos> listaPedidos = new ArrayList<>();
+        String sql;
+
+        sql = "SELECT "
+                + "ped.id_pedido as codigo_pedido, "
+        		+ "ped.total_pedido as total, "
+                + "cli.nome as nome_cliente, "
+                + "ped.clientepedido_id as codigo_cliente, "
+                + "DATE_FORMAT(ped.data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada, "
+                + "ped.status as status, "
+                + "ped.observacoes as observacoes, "
+                + "ped.forma_pagamento as forma_pagamento "
+                + "FROM pedidos as ped "
+                + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "
+                + "where status = 'Em Rota de Entrega'"; 
+
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+          
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                int count = 0;
+                while (rs.next()) {
+                    Pedidos pedido = new Pedidos();
+                    Clientepedido cliente = new Clientepedido();
+
+                    pedido.setIdPedido(rs.getInt("codigo_pedido"));
+                    cliente.setNome(rs.getString("nome_cliente"));
+                    cliente.setId(rs.getInt("codigo_cliente")); 
+
+                    pedido.setDataPeedido(rs.getString("data_formatada")); 
+                    pedido.setStatus(rs.getString("status"));
+                    pedido.setObservacoes(rs.getString("observacoes"));
+                    pedido.setFormapagamento(rs.getString("forma_pagamento"));
+                    pedido.setTotalPedido(rs.getDouble("total"));
+
+                    pedido.setClientepedido(cliente); 
+
+                    listaPedidos.add(pedido);
+                    count++; 
+                }
+                System.out.println("DEBUG_PEDIDO_DAO: Total de pedidos encontrados em listaTodosPedidosDoDia: " + count);
+            }
+        } catch (SQLException e) {
+            System.err.println("DEBUG_PEDIDO_DAO: ERRO ao listar todos os pedidos do dia: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (con != null && !con.isClosed()) {
+                    con.close(); 
+                    System.out.println("DEBUG_PEDIDO_DAO: Conexão fechada após listaTodosPedidosDoDia.");
+                }
+            } catch (SQLException e) {
+                System.err.println("DEBUG_PEDIDO_DAO: ERRO ao fechar a conexão após listaTodosPedidosDoDia: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+       return listaPedidos;
+   }
+    public List<Pedidos> pedidoPendentes() { // Removido 'Pedidos pedido' do parâmetro, pois você não precisa passar um objeto vazio
+   	 List<Pedidos> listaPedidos = new ArrayList<>();
+        String sql;
+
+        sql = "SELECT "
+                + "ped.id_pedido as codigo_pedido, "
+        		+ "ped.total_pedido as total, "
+                + "cli.nome as nome_cliente, "
+                + "ped.clientepedido_id as codigo_cliente, "
+                + "DATE_FORMAT(ped.data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada, "
+                + "ped.status as status, "
+                + "ped.observacoes as observacoes, "
+                + "ped.forma_pagamento as forma_pagamento "
+                + "FROM pedidos as ped "
+                + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "
+                + "where status = 'Pendente' "; 
+
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+          
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                int count = 0;
+                while (rs.next()) {
+                    Pedidos pedido = new Pedidos();
+                    Clientepedido cliente = new Clientepedido();
+
+                    pedido.setIdPedido(rs.getInt("codigo_pedido"));
+                    cliente.setNome(rs.getString("nome_cliente"));
+                    cliente.setId(rs.getInt("codigo_cliente")); 
+
+                    pedido.setDataPeedido(rs.getString("data_formatada")); 
+                    pedido.setStatus(rs.getString("status"));
+                    pedido.setObservacoes(rs.getString("observacoes"));
+                    pedido.setFormapagamento(rs.getString("forma_pagamento"));
+                    pedido.setTotalPedido(rs.getDouble("total"));
+
+                    pedido.setClientepedido(cliente); 
+
+                    listaPedidos.add(pedido);
+                    count++; 
+                }
+                System.out.println("DEBUG_PEDIDO_DAO: Total de pedidos encontrados em listaTodosPedidosDoDia: " + count);
+            }
+        } catch (SQLException e) {
+            System.err.println("DEBUG_PEDIDO_DAO: ERRO ao listar todos os pedidos do dia: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (con != null && !con.isClosed()) {
+                    con.close(); 
+                    System.out.println("DEBUG_PEDIDO_DAO: Conexão fechada após listaTodosPedidosDoDia.");
+                }
+            } catch (SQLException e) {
+                System.err.println("DEBUG_PEDIDO_DAO: ERRO ao fechar a conexão após listaTodosPedidosDoDia: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+       return listaPedidos;
+   }
+    public List<Pedidos> todosEntregue() { // Removido 'Pedidos pedido' do parâmetro, pois você não precisa passar um objeto vazio
+   	 List<Pedidos> listaPedidos = new ArrayList<>();
+        String sql;
+
+        sql = "SELECT "
+                + "ped.id_pedido as codigo_pedido, "
+        		+ "ped.total_pedido as total, "
+                + "cli.nome as nome_cliente, "
+                + "ped.clientepedido_id as codigo_cliente, "
+                + "DATE_FORMAT(ped.data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada, "
+                + "ped.status as status, "
+                + "ped.observacoes as observacoes, "
+                + "ped.forma_pagamento as forma_pagamento "
+                + "FROM pedidos as ped "
+                + "INNER JOIN tb_cliente_pedido as cli ON cli.id = ped.clientepedido_id "; 
+
+        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+          
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                int count = 0;
+                while (rs.next()) {
+                    Pedidos pedido = new Pedidos();
+                    Clientepedido cliente = new Clientepedido();
+
+                    pedido.setIdPedido(rs.getInt("codigo_pedido"));
+                    cliente.setNome(rs.getString("nome_cliente"));
+                    cliente.setId(rs.getInt("codigo_cliente")); 
+
+                    pedido.setDataPeedido(rs.getString("data_formatada")); 
+                    pedido.setStatus(rs.getString("status"));
+                    pedido.setObservacoes(rs.getString("observacoes"));
+                    pedido.setFormapagamento(rs.getString("forma_pagamento"));
+                    pedido.setTotalPedido(rs.getDouble("total"));
+
+                    pedido.setClientepedido(cliente); 
+
+                    listaPedidos.add(pedido);
+                    count++; 
+                }
+                System.out.println("DEBUG_PEDIDO_DAO: Total de pedidos encontrados em listaTodosPedidosDoDia: " + count);
+            }
+        } catch (SQLException e) {
+            System.err.println("DEBUG_PEDIDO_DAO: ERRO ao listar todos os pedidos do dia: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (con != null && !con.isClosed()) {
+                    con.close(); 
+                    System.out.println("DEBUG_PEDIDO_DAO: Conexão fechada após listaTodosPedidosDoDia.");
+                }
+            } catch (SQLException e) {
+                System.err.println("DEBUG_PEDIDO_DAO: ERRO ao fechar a conexão após listaTodosPedidosDoDia: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+       return listaPedidos;
+   }
+
 }

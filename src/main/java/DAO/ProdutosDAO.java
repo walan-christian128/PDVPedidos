@@ -107,20 +107,20 @@ public class ProdutosDAO {
 
 	public void alterarProdutos(Produtos obj) {
         try {
-            String sql = "UPDATE tb_produtos set descricao=?,qtd_estoque=?,for_id=?,preco_de_compra=?,preco_de_venda=?,imagem=? where id=?";
+        	String sql = "UPDATE tb_produtos set descricao=?,preco_de_compra=?,preco_de_venda=?,qtd_estoque=?,for_id=?,imagem=? where id=?";
 
             //Organização SQL e Conexão //
             PreparedStatement stmt = con.prepareStatement(sql);
 
-            stmt.setString(1, obj.getDescricao());
-            stmt.setInt(2, obj.getQtd_estoque());
-            stmt.setInt(3, obj.getFornecedor().getId());
-            stmt.setDouble(4, obj.getPreco_de_compra());
-            stmt.setDouble(5, obj.getPreco_de_venda());
+            stmt.setString(1, obj.getDescricao());        // Corresponde a descricao=?
+            stmt.setDouble(2, obj.getPreco_de_compra()); // Corresponde a preco_de_compra=?
+            stmt.setDouble(3, obj.getPreco_de_venda());  // Corresponde a preco_de_venda=?
+            stmt.setInt(4, obj.getQtd_estoque());        // Corresponde a qtd_estoque=?
+            stmt.setInt(5, obj.getFornecedor().getId()); // Corresponde a for_id=?
             
             if (obj.getImagem() != null) {
                 ByteArrayInputStream bais = new ByteArrayInputStream(obj.getImagem());
-                stmt.setBinaryStream(6, bais, obj.getImagem().length);
+                stmt.setBinaryStream(6, bais, obj.getImagem().length); // Corresponde a imagem=?
             } else {
                 stmt.setNull(6, Types.BLOB);
             }

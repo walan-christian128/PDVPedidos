@@ -6,6 +6,7 @@
 <%@ page import="java.util.List"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="DAO.PedidosDAO" %>
+<%@ page import="java.text.NumberFormat, java.util.Locale" %>
 
 <%
 String empresa = (String) session.getAttribute("empresa");
@@ -17,12 +18,66 @@ if (empresa == null || empresa.isEmpty()) {
 
 List<Pedidos> pedidos = new ArrayList<>(); // Inicializa para garantir que não seja nulo
 try {
-    PedidosDAO daop = new PedidosDAO(empresa);
-    pedidos = daop.listaTodosPedidosDoDia(); // Carrega os pedidos para a renderização inicial
+	PedidosDAO daop = new PedidosDAO(empresa);
+	pedidos = daop.listaTodosPedidosDoDia(); // Carrega os pedidos para a renderização inicial
 } catch (Exception e) {
-    e.printStackTrace(); // Loga qualquer erro na conexão ou consulta
-    // Opcional: Adicionar uma mensagem de erro ao usuário na tela
+	e.printStackTrace(); // Loga qualquer erro na conexão ou consulta
+	// Opcional: Adicionar uma mensagem de erro ao usuário na tela
 }
+
+List<Pedidos> todosPedidos = new ArrayList<>();
+try {
+	PedidosDAO daoTodos = new PedidosDAO(empresa);
+	todosPedidos = daoTodos.pedidoEntregue();
+
+} catch (Exception e) {
+
+}
+
+List<Pedidos> Pedidostodos = new ArrayList<>();
+try {
+	PedidosDAO Todosdao = new PedidosDAO(empresa);
+	Pedidostodos = Todosdao.todosEntregue();
+
+} catch (Exception e) {
+
+}
+
+List<Pedidos> PedidosPendentes = new ArrayList<>();
+try {
+	PedidosDAO Pendentedao = new PedidosDAO(empresa);
+	PedidosPendentes = Pendentedao.pedidoPendentes();
+
+} catch (Exception e) {
+
+}
+List<Pedidos> PedidosrotaEntrega = new ArrayList<>();
+try {
+	PedidosDAO entregadao = new PedidosDAO(empresa);
+	PedidosrotaEntrega = entregadao.pedidoEmRota();
+
+} catch (Exception e) {
+
+}
+
+List<Pedidos> pedidosReprovados = new ArrayList<>();
+try {
+	PedidosDAO reprovadosDAO = new PedidosDAO(empresa);
+	pedidosReprovados = reprovadosDAO.pedidoReprovados();
+
+} catch (Exception e) {
+
+}
+
+List<Pedidos> pedidosPreparacao = new ArrayList<>();
+try {
+	PedidosDAO preparacaoDAO = new PedidosDAO(empresa);
+	pedidosPreparacao = preparacaoDAO.pedidoPreparacao();
+
+} catch (Exception e) {
+
+}
+NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
 %>
 
 <!DOCTYPE html>
@@ -69,39 +124,6 @@ try {
 	style="background-image: url('img/Gemini_Generated_Image_97a36f97a36f97a3.jpg'); background-size: cover; background-position: center; margin: 0; padding: 0; min-height: 100vh; width: 100vw; display: flex; flex-direction: column;">
 
 	<%@ include file="menu.jsp"%>
-
- 
-
-    <div class="container mt-3"> <%-- Use um container para centralizar e limitar a largura --%>
-        <%
-        String mensagemSucesso = (String) session.getAttribute("mensagemSucesso");
-        if (mensagemSucesso != null) {
-            session.removeAttribute("mensagemSucesso");
-        %>
-            <div class="alert alert-success alert-dismissible fade show py-2" role="alert" style="font-size: 0.9rem;">
-                <%= mensagemSucesso %>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <%
-        }
-
-        String mensagemErro = (String) session.getAttribute("mensagemErro");
-        if (mensagemErro != null) {
-            session.removeAttribute("mensagemErro");
-        %>
-            <div class="alert alert-danger alert-dismissible fade show py-2" role="alert" style="font-size: 0.9rem;">
-                <%= mensagemErro %>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        <%
-        }
-        %>
-    </div>
-
-
-
-
-
 
 	<div class="container-fluid flex-grow-1 py-4">
 		<h3 class="mb-4 text-dark">Pedidos</h3>
@@ -190,72 +212,548 @@ try {
 					</div>
 				</div>
 			</div>
+			
+			<div class="col-12 col-sm-6 col-md-4 col-lg-2">
+				<div
+					class="card text-dark bg-light bg-gradient shadow-sm rounded-3">
+					<div
+						class="card-body d-flex justify-content-between align-items-center">
+						<div>
+							<h2 class="card-title mb-0" id="totalEntregue">0</h2>
+							<p class="card-text mb-0">PEDIDOS ENTREGUE</p>
+						</div>
+						<i class="bi bi-cart fs-1 opacity-75"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+		<ul class="nav nav-tabs" id="myTab" role="tablist">
+		
+		<div class="d-flex flex-wrap align-items-center gap-2">
+		
+			<label class="form-control mb-0" style="width: auto;">filtros:</label>
+			 <li class="nav-item" role="presentation">
+			<button class="btn btn-warning" type="button" data-bs-toggle="tab" data-bs-target="#PedidosPendentes" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">PEDIDOS
+				PENDENTES</button> </li>
+			<li class="nav-item" role="presentation">
+			<button class="btn btn-light" type="button" id="btnPedidosEntregues" data-bs-toggle="tab" data-bs-target="#pedidosEntregues" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">PEDIDOS ENTREGUES</button>
+			 </li>
+			<li class="nav-item" role="presentation">
+			<button class="btn btn-primary" type="button" id="home-tab" data-bs-toggle="tab" data-bs-target="#todosPedidos" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="true">TODOS PEDIDOS</button>
+			</li>
+				<li class="nav-item" role="presentation">
+			<button class="btn btn-success" type="button" data-bs-toggle="tab" data-bs-target="#rotaEntrega" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="true">PEDIDOS EM
+				ROTA DE ENTREGA</button>
+				</li>
+				<li class="nav-item" role="presentation">
+			<button class="btn btn-danger" type="button" data-bs-toggle="tab" data-bs-target="#pedidosReprovados" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="true">PEDIDOS
+				REPROVADOS</button>
+				</li>
+				<li class="nav-item" role="presentation">
+			<button class="btn btn-info" type="button" data-bs-toggle="tab" data-bs-target="#pedidosPreparacao" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="true">PEDIDOS EM
+				PREPARAÇÃO</button>
+				</li>
+		</div>
+		</ul>
+			<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Pedidos do dia</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (pedidos != null && !pedidos.isEmpty()) {
+										for (int i = 0; i < pedidos.size(); i++) {
+									%>
+									<tr>
+										<td><%=pedidos.get(i).getIdPedido()%></td>
+										<td><%=pedidos.get(i).getClientepedido().getNome()%></td>
+										<td><%=pedidos.get(i).getDataPeedido()%></td>
+										<td><%=pedidos.get(i).getStatus()%></td>
+										<td><%= currencyFormat.format(pedidos.get(i).getTotalPedido()) %></td>
+										<td><%=pedidos.get(i).getObservacoes() != null && !pedidos.get(i).getObservacoes().isEmpty()
+		? pedidos.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=pedidos.get(i).getFormapagamento() != null && !pedidos.get(i).getFormapagamento().isEmpty()
+		? pedidos.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+		
+		<div class="tab-content" id="myTabContent">
+		
+		<div class="tab-pane fade" id="pedidosPreparacao" role="tabpanel"
+				aria-labelledby="home-tab" tabindex="0">
+			<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Pedidos Reprovados</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (pedidosPreparacao != null && !pedidosPreparacao.isEmpty()) {
+										for (int i = 0; i < pedidosPreparacao.size(); i++) {
+									%>
+									<tr>
+										<td><%=pedidosPreparacao.get(i).getIdPedido()%></td>
+										<td><%=pedidosPreparacao.get(i).getClientepedido().getNome()%></td>
+										<td><%=pedidosPreparacao.get(i).getDataPeedido()%></td>
+										<td><%=pedidosPreparacao.get(i).getStatus()%></td>
+										<td>R$ <%=String.format("%.2f", pedidosPreparacao.get(i).getTotalPedido())%></td>
+										<td><%=pedidosPreparacao.get(i).getObservacoes() != null && !pedidosPreparacao.get(i).getObservacoes().isEmpty()
+		? pedidosPreparacao.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=pedidosPreparacao.get(i).getFormapagamento() != null && !pedidosPreparacao.get(i).getFormapagamento().isEmpty()
+		? pedidosPreparacao.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=pedidosPreparacao.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=pedidosPreparacao.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		
+			<div class="tab-pane fade" id="pedidosReprovados" role="tabpanel"
+				aria-labelledby="home-tab" tabindex="0">
+			<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Pedidos Reprovados</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (pedidosReprovados != null && !pedidosReprovados.isEmpty()) {
+										for (int i = 0; i < pedidosReprovados.size(); i++) {
+									%>
+									<tr>
+										<td><%=pedidosReprovados.get(i).getIdPedido()%></td>
+										<td><%=pedidosReprovados.get(i).getClientepedido().getNome()%></td>
+										<td><%=pedidosReprovados.get(i).getDataPeedido()%></td>
+										<td><%=pedidosReprovados.get(i).getStatus()%></td>
+										<td>R$ <%=String.format("%.2f", pedidosReprovados.get(i).getTotalPedido())%></td>
+										<td><%=pedidosReprovados.get(i).getObservacoes() != null && !pedidosReprovados.get(i).getObservacoes().isEmpty()
+		? pedidosReprovados.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=pedidosReprovados.get(i).getFormapagamento() != null && !pedidosReprovados.get(i).getFormapagamento().isEmpty()
+		? pedidosReprovados.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=pedidosReprovados.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=pedidosReprovados.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		
+			<div class="tab-pane fade" id="rotaEntrega" role="tabpanel"
+				aria-labelledby="home-tab" tabindex="0">
+			<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Pedidos em rota de entrega</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (PedidosrotaEntrega != null && !PedidosrotaEntrega.isEmpty()) {
+										for (int i = 0; i < PedidosrotaEntrega.size(); i++) {
+									%>
+									<tr>
+										<td><%=PedidosrotaEntrega.get(i).getIdPedido()%></td>
+										<td><%=PedidosrotaEntrega.get(i).getClientepedido().getNome()%></td>
+										<td><%=PedidosrotaEntrega.get(i).getDataPeedido()%></td>
+										<td><%=PedidosrotaEntrega.get(i).getStatus()%></td>
+										<td>R$ <%=String.format("%.2f", PedidosrotaEntrega.get(i).getTotalPedido())%></td>
+										<td><%=PedidosrotaEntrega.get(i).getObservacoes() != null && !PedidosrotaEntrega.get(i).getObservacoes().isEmpty()
+		? PedidosrotaEntrega.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=PedidosrotaEntrega.get(i).getFormapagamento() != null && !PedidosrotaEntrega.get(i).getFormapagamento().isEmpty()
+		? PedidosrotaEntrega.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=PedidosrotaEntrega.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=PedidosrotaEntrega.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class="tab-pane fade" id="todosPedidos" role="tabpanel"
+				aria-labelledby="home-tab" tabindex="0">
+			<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Todos Pedidos</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (Pedidostodos != null && !Pedidostodos.isEmpty()) {
+										for (int i = 0; i < Pedidostodos.size(); i++) {
+									%>
+									<tr>
+										<td><%=Pedidostodos.get(i).getIdPedido()%></td>
+										<td><%=Pedidostodos.get(i).getClientepedido().getNome()%></td>
+										<td><%=Pedidostodos.get(i).getDataPeedido()%></td>
+										<td><%=Pedidostodos.get(i).getStatus()%></td>
+										<td>R$ <%=String.format("%.2f", Pedidostodos.get(i).getTotalPedido())%></td>
+										<td><%=Pedidostodos.get(i).getObservacoes() != null && !Pedidostodos.get(i).getObservacoes().isEmpty()
+		? Pedidostodos.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=Pedidostodos.get(i).getFormapagamento() != null && !Pedidostodos.get(i).getFormapagamento().isEmpty()
+		? Pedidostodos.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=Pedidostodos.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=Pedidostodos.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+						<div class="tab-pane fade" id="PedidosPendentes" role="tabpanel"
+				aria-labelledby="profile-tab" tabindex="0">
+			<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Pedidos Pendentes</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (PedidosPendentes != null && !PedidosPendentes.isEmpty()) {
+										for (int i = 0; i < PedidosPendentes.size(); i++) {
+									%>
+									<tr>
+										<td><%=PedidosPendentes.get(i).getIdPedido()%></td>
+										<td><%=PedidosPendentes.get(i).getClientepedido().getNome()%></td>
+										<td><%=PedidosPendentes.get(i).getDataPeedido()%></td>
+										<td><%=PedidosPendentes.get(i).getStatus()%></td>
+										<td>R$ <%=String.format("%.2f", PedidosPendentes.get(i).getTotalPedido())%></td>
+										<td><%=PedidosPendentes.get(i).getObservacoes() != null && !PedidosPendentes.get(i).getObservacoes().isEmpty()
+		? PedidosPendentes.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=PedidosPendentes.get(i).getFormapagamento() != null && !PedidosPendentes.get(i).getFormapagamento().isEmpty()
+		? PedidosPendentes.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=PedidosPendentes.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=PedidosPendentes.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			
+			<div class="tab-pane fade" id="pedidosEntregues" role="tabpanel"
+				aria-labelledby="profile-tab" tabindex="0">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="table-container">
+							<h1 class="card-title mb-0">Pedidos Entregues</h1>
+							<table id="pedidosDiario"
+								class="table table-dark table-striped table-hover">
+								<thead>
+									<tr>
+										<th>Codigo do pedido</th>
+										<th>Nome</th>
+										<th>Data</th>
+										<th>Status</th>
+										<th>Total Pedido</th>
+										<th>Observação</th>
+										<th>Forma de pagamento</th>
+										<th>Ações</th>
+									</tr>
+								</thead>
+								<tbody id="pedidosTableBody">
+
+									<%
+									if (todosPedidos != null && !todosPedidos.isEmpty()) {
+										for (int i = 0; i < todosPedidos.size(); i++) {
+									%>
+									<tr>
+										<td><%=todosPedidos.get(i).getIdPedido()%></td>
+										<td><%=todosPedidos.get(i).getClientepedido().getNome()%></td>
+										<td><%=todosPedidos.get(i).getDataPeedido()%></td>
+										<td><%=todosPedidos.get(i).getStatus()%></td>
+										<td>R$ <%=String.format("%.2f", todosPedidos.get(i).getTotalPedido())%></td>
+										<td><%=todosPedidos.get(i).getObservacoes() != null && !todosPedidos.get(i).getObservacoes().isEmpty()
+		? todosPedidos.get(i).getObservacoes()
+		: "-"%></td>
+										<td><%=todosPedidos.get(i).getFormapagamento() != null && !todosPedidos.get(i).getFormapagamento().isEmpty()
+		? todosPedidos.get(i).getFormapagamento()
+		: "-"%></td>
+										<td>
+											<button type="button"
+												class="btn btn-sm btn-info visualizar-pedido"
+												data-id-pedido="<%=todosPedidos.get(i).getIdPedido()%>"
+												data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+												<i class="bi bi-eye"></i> Detalhes
+											</button> <a type="button"
+											class="btn btn-sm btn-success btn-atualizar-status"
+											data-id-pedido="<%=todosPedidos.get(i).getIdPedido()%>"
+											data-novo-status="Em Preparo" data-bs-toggle="modal"
+											data-bs-target="#atualizarStatus"> <i
+												class="bi bi-arrow-up-circle"></i> Atualizar Status
+										</a>
+										</td>
+									</tr>
+									<%
+									}
+									} else {
+									%>
+									<tr>
+										<td colspan="8" class="text-center">Nenhum pedido
+											encontrado para hoje.</td>
+									</tr>
+									<%
+									}
+									%>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 
-	 <div class="row">
-            <div class="col-md-12">
-                <div class="table-container">
-                <h1 class="card-title mb-0">Pedidos do dia</h1>
-                    <table id="pedidosDiario" class="table table-dark table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>Codigo do pedido</th>
-                                <th>Nome</th>
-                                <th>Data</th>
-                                <th>Status</th>
-                                <th>Total Pedido</th>
-                                <th>Observação</th>
-                                <th>Forma de pagamento</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pedidosTableBody">
-				
-    <%
-    if (pedidos != null && !pedidos.isEmpty()) {
-        for (int i = 0; i <pedidos.size(); i++) {
-    %>
-    <tr>
-        <td><%= pedidos.get(i).getIdPedido() %></td>
-        <td><%= pedidos.get(i).getClientepedido().getNome() %></td>
-        <td><%= pedidos.get(i).getDataPeedido() %></td>
-        <td><%= pedidos.get(i).getStatus() %></td>
-        <td>R$ <%=String.format("%.2f",pedidos.get(i).getTotalPedido())   %></td>
-        <td><%= pedidos.get(i).getObservacoes() != null && !pedidos.get(i).getObservacoes().isEmpty() ? pedidos.get(i).getObservacoes() : "-" %></td>
-        <td><%= pedidos.get(i).getFormapagamento() != null && !pedidos.get(i).getFormapagamento().isEmpty() ? pedidos.get(i).getFormapagamento() : "-" %></td>
-        <td>
-    <button type="button"
-            class="btn btn-sm btn-info visualizar-pedido"
-            data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
-            data-bs-toggle="modal"
-            data-bs-target="#gereciarPedido">
-        <i class="bi bi-eye"></i> Detalhes
-    </button>
-    <a type="button"
-            class="btn btn-sm btn-success btn-atualizar-status" data-id-pedido="<%=pedidos.get(i).getIdPedido()%>"
-            data-novo-status="Em Preparo" data-bs-toggle="modal" data-bs-target="#atualizarStatus" >
-        <i class="bi bi-arrow-up-circle"></i> Atualizar Status
-    </a>
-</td>
-    </tr>
-    <%
-        }
-    } else {
-    %>
-    <tr>
-        <td colspan="8" class="text-center">Nenhum pedido encontrado para hoje.</td>
-    </tr>
-    <%
-    }
-    %>
-</tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-	</div>
-
-	<div class="modal fade" id="gereciarPedido" data-bs-backdrop="static"
+		<div class="modal fade" id="gereciarPedido" data-bs-backdrop="static"
 		data-bs-keyboard="false" tabindex="-1"
 		aria-labelledby="staticBackdropLabel" aria-hidden="true">
 		<div
@@ -412,6 +910,7 @@ try {
       </form>
     </div>
   </div>
+</div>
 </div>
 
 
@@ -585,6 +1084,7 @@ try {
             let totalPedidosEmPreparacao = 0;
             let totalPedidosEmEntrega = 0;
             let totalPedidosReprovados = 0;
+            let totalPedidosEntregue = 0;
             const clientesComPedidos = new Set();
 
             if (pedidos && pedidos.length > 0) {
@@ -600,6 +1100,8 @@ try {
                         totalPedidosEmEntrega++;
                     } else if (statusUpper === 'REPROVADO') {
                         totalPedidosReprovados++;
+                    } else if (statusUpper === 'ENTREGUE') {
+                    	totalPedidosEntregue++;
                     }
                     if (pedido.clientepedido && pedido.clientepedido.nome) {
                         clientesComPedidos.add(pedido.clientepedido.nome);
@@ -613,6 +1115,7 @@ try {
             document.getElementById('totalPedidosEmEntrega').textContent = totalPedidosEmEntrega;
             document.getElementById('totalPedidosReprovados').textContent = totalPedidosReprovados;
             document.getElementById('totalClientesPedidos').textContent = clientesComPedidos.size;
+            document.getElementById('totalEntregue').textContent = totalPedidosEntregue;
         }
 
         /**
@@ -739,5 +1242,55 @@ try {
         setInterval(carregarEAtualizarPedidosViaAjax, 10000); // Atualiza a cada 10 segundos
     });
 </script>
+ <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const botao = document.getElementById("btnPedidosEntregues");
+            if (botao) {
+                botao.addEventListener("click", function() {
+                    console.log("Botão clicado! Chamando o Servlet...");
+
+                    // --- ESTA É A "NOTACÃO JAVASCRIPT" PARA EXECUTAR SEU SERVLET ---
+                    fetch('getPedidosEntreguesJson')
+                        .then(response => {
+                            if (!response.ok) {
+                                if (response.status === 401) {
+                                    window.location.href = 'LoginExpirou.html';
+                                    return Promise.reject('Sessão expirada.');
+                                }
+                                return response.text().then(text => {
+                                    throw new Error(`Erro HTTP ${response.status}: ${response.statusText}. Detalhes: ${text}`);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log("Dados de pedidos entregues recebidos:", data);
+                            // Exemplo: Limpar o contêiner e mostrar os dados
+                            const container = document.getElementById("aondeACarregarTabelaVai");
+                            if (container) {
+                                if (data && data.length > 0) {
+                                    container.innerHTML = "<h3>Pedidos Entregues Carregados:</h3>";
+                                    data.forEach(pedido => {
+                                        container.innerHTML += `<p>ID: ${pedido.idPedido}, Cliente: ${pedido.clientepedido ? pedido.clientepedido.nome : '-'}, Status: ${pedido.status}</p>`;
+                                    });
+                                } else {
+                                    container.innerHTML = "<p>Nenhum pedido entregue encontrado.</p>";
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Erro ao carregar pedidos entregues:", error);
+                            const container = document.getElementById("aondeACarregarTabelaVai");
+                            if (container) {
+                                container.innerHTML = `<p style="color: red;">Erro ao carregar os dados: ${error.message}</p>`;
+                            }
+                            alert("Não foi possível carregar os pedidos. Verifique o console.");
+                        });
+                });
+            }
+        });
+    </script>
+
+
 </body>
 </html>

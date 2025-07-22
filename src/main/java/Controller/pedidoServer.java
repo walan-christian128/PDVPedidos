@@ -71,7 +71,7 @@ import DAO.ProdutosDAO;
 import DAO.itensVendaDAO;
 
 @WebServlet(urlPatterns = { "/pedidoServer", "/selecionarVendaCarrinho", "/finalizarPedidoServlet",
-		"/listarPedidosCliente", "/listarPedidos","/selecionarPedido" })
+		"/listarPedidosCliente", "/listarPedidos","/selecionarPedido","/getPedidosEntreguesJson" })
 
 public class pedidoServer extends HttpServlet {
 
@@ -106,7 +106,12 @@ public class pedidoServer extends HttpServlet {
 
 			}
 
-		} else if ("remover".equals(acao)) {
+		}	else if ("/getPedidosEntreguesJson".equals(servletPath)) {
+
+			listarPedidosEntregue(request, response);
+
+		} 
+		else if ("remover".equals(acao)) {
 
 			String idParam = request.getParameter("id");
 
@@ -178,6 +183,46 @@ public class pedidoServer extends HttpServlet {
 
 	}
 
+	private void listarPedidosEntregue(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	    response.setContentType("application/json");
+	    response.setCharacterEncoding("UTF-8");
+	    String empresa = (String) request.getSession().getAttribute("empresa");
+
+	    // A variável 'ped' não é utilizada, pode ser removida.
+	    // Pedidos ped = new Pedidos();
+
+	    try {
+	        // Validação inicial: verifica se a sessão da empresa está ativa
+	        if (empresa == null || empresa.isEmpty()) {
+	            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // HTTP 401 Unauthorized
+	            response.getWriter().write("{\"error\": \"Sessão expirada ou empresa não definida. Faça login novamente.\"}");
+	            System.err.println("Erro: Sessão expirada ou empresa não definida ao listar pedidos entregues.");
+	            return; // Sai do método após enviar o erro
+	        }
+
+	        PedidosDAO pedidosDAO = new PedidosDAO(empresa);
+	        List<Pedidos> pedidosEntregues = pedidosDAO.pedidoEntregue(); // Chama seu método DAO
+
+	        Gson gson = new Gson();
+	        String json = gson.toJson(pedidosEntregues); // Converte a lista para JSON
+
+	        response.getWriter().write(json); // Envia o JSON como resposta
+	        System.out.println("DEBUG: Pedidos entregues encontrados: " + pedidosEntregues.size());
+
+	    } catch (SQLException e) {
+	        // Captura exceções específicas de banco de dados
+	        System.err.println("ERRO SQL ao listar pedidos entregues: " + e.getMessage());
+	        e.printStackTrace(); // Imprime o stack trace para depuração no console do servidor
+	        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // HTTP 500 Internal Server Error
+	        response.getWriter().write("{\"error\": \"Erro interno do servidor ao acessar o banco de dados. Tente novamente mais tarde.\"}");
+	    } catch (Exception e) {
+	        // Captura qualquer outra exceção inesperada
+	        System.err.println("ERRO INESPERADO ao listar pedidos entregues: " + e.getMessage());
+	        e.printStackTrace(); // Imprime o stack trace para depuração
+	        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // HTTP 500 Internal Server Error
+	        response.getWriter().write("{\"error\": \"Ocorreu um erro inesperado no servidor. Por favor, tente novamente.\"}");
+	    }
+	}
 	private void selecionarPedido(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	    String empresa = (String) request.getSession().getAttribute("empresa");
 	    if (empresa == null) {
@@ -409,10 +454,14 @@ public class pedidoServer extends HttpServlet {
 		double subtotalGeral = 0.0;
 
 		DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("pt", "BR"));
-
 		symbols.setCurrencySymbol("R$");
+		symbols.setMonetaryDecimalSeparator(',');
+		symbols.setGroupingSeparator('.');
 
 		DecimalFormat df = new DecimalFormat("¤ #,##0.00", symbols);
+
+		String valorFormatado = df.format(subtotalGeral);
+
 
 		JSONArray itensParaFinalizar = new JSONArray();
 
@@ -518,6 +567,7 @@ public class pedidoServer extends HttpServlet {
 
 		symbols.setCurrencySymbol("R$");
 
+		@SuppressWarnings("unused")
 		DecimalFormat df = new DecimalFormat("¤ #,##0.00", symbols);
 
 		if (listaPedidos != null && !listaPedidos.isEmpty()) {
@@ -578,15 +628,7 @@ public class pedidoServer extends HttpServlet {
 
 				out.println("</div>");
 
-// REMOVIDO: Bloco que tentava acessar pedido.getItensPedido()
 
-// Se você quiser exibir os itens de cada pedido, precisará:
-
-// 1. Adicionar List<ItensPedidos> itensPedido na classe Pedidos.
-
-// 2. Modificar seu PedidosDAO.listarPedidosPorCliente para carregar esses itens junto com o pedido.
-
-// Isso adicionaria complexidade à consulta, mas é a forma correta de fazer.
 
 				out.println("</div>"); // card-body
 
@@ -602,6 +644,7 @@ public class pedidoServer extends HttpServlet {
 
 	}
 
+	@SuppressWarnings("unused")
 	private void CadClientePedido(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
@@ -653,7 +696,7 @@ public class pedidoServer extends HttpServlet {
 
 			dao.Clientepedido(cpd);
 
-			RequestDispatcher rd = request.getRequestDispatcher("CadastroClientePedido.jsp");
+			RequestDispatcher rd = request.getRequestDispatcher("LoginPedido.jsp");
 
 			rd.forward(request, response);
 
@@ -669,155 +712,113 @@ public class pedidoServer extends HttpServlet {
 	}
 
 	protected void finalizarPedido(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException, SQLException, ClassNotFoundException {
+	        throws ServletException, IOException, SQLException, ClassNotFoundException {
 
-		HttpSession session = request.getSession();
+	    HttpSession session = request.getSession();
+	    String empresa = (String) session.getAttribute("empresa");
+	    Integer clienteId = (Integer) session.getAttribute("usuarioID");
 
-		String empresa = (String) session.getAttribute("empresa");
+	    if (clienteId == null) {
+	        response.sendRedirect(request.getContextPath() + "/LoginExpirado.jsp");
+	        return;
+	    }
 
-		Integer clienteId = (Integer) session.getAttribute("usuarioID");
+	    JSONArray itensArray = (JSONArray) session.getAttribute("itens");
+	    if (itensArray == null || itensArray.length() == 0) {
+	        response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro="
+	                + URLEncoder.encode("Carrinho vazio. Não é possível finalizar o pedido.", "UTF-8"));
+	        return;
+	    }
 
-		if (clienteId == null) {
+	    String observacoes = request.getParameter("observacoes");
+	    String formaPagamento = request.getParameter("formaPagamento");
 
-			response.sendRedirect(request.getContextPath() + "/LoginExpirado.jsp");
+	    Pedidos novoPedido = new Pedidos();
+	    Clientepedido cliente = new Clientepedido();
+	    cliente.setId(clienteId);
 
-			return;
+	    novoPedido.setClientepedido(cliente);
+	    novoPedido.setDataPeedido(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+	    novoPedido.setStatus("Pendente");
+	    novoPedido.setObservacoes(observacoes);
+	    novoPedido.setFormapagamento(formaPagamento);
 
-		}
+	    // ✅ Tratamento seguro do subtotal vindo da tela (formato brasileiro)
+	    String subtotalStr = request.getParameter("subtotal");
 
-		JSONArray itensArray = (JSONArray) session.getAttribute("itens");
+	    if (subtotalStr != null && !subtotalStr.trim().isEmpty()) {
+	        try {
+	            double subtotal = Double.parseDouble(subtotalStr);
+	            novoPedido.setTotalPedido(subtotal);
+	        } catch (NumberFormatException e) {
+	            System.err.println("Subtotal inválido: " + subtotalStr);
+	            response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro=" +
+	                URLEncoder.encode("Subtotal inválido", "UTF-8"));
+	            return;
+	        }
+	    }
 
-		if (itensArray == null || itensArray.length() == 0) {
 
-			response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro="
-					+ URLEncoder.encode("Carrinho vazio. Não é possível finalizar o pedido.", "UTF-8"));
+	    // Inicialização dos DAOs
+	    PedidosDAO pedidoDAO = null;
+	    ProdutosDAO daoProd = null;
+	    ItensPedidoDAO daoit = null;
 
-			return;
+	    try {
+	        pedidoDAO = new PedidosDAO(empresa);
+	        daoProd = new ProdutosDAO(empresa);
+	        daoit = new ItensPedidoDAO(empresa);
 
-		}
+	        pedidoDAO.cadastrarPedido(novoPedido);
 
-		String observacoes = request.getParameter("observacoes");
+	        for (int i = 0; i < itensArray.length(); i++) {
+	            JSONObject linha = itensArray.getJSONObject(i);
 
-		String formaPagamento = request.getParameter("formaPagamento");
-		
+	            int quantidade = linha.getInt("quantidade");
+	            double precoUnitario = linha.getDouble("precoUnitario");
+	            int cdProduto = linha.getInt("idProduto");
 
-		Pedidos novoPedido = new Pedidos();
+	            Produtos produto = new Produtos();
+	            produto.setId(cdProduto);
 
-		Clientepedido cliente = new Clientepedido();
+	            ItensPedidos itp = new ItensPedidos();
+	            itp.setPedido(novoPedido);
+	            itp.setProduto(produto);
+	            itp.setQuantidade(quantidade);
+	            itp.setPrecoUnitario(precoUnitario);
 
-		cliente.setId(clienteId);
+	            daoit.inserirItensPedidos(itp);
 
-		novoPedido.setClientepedido(cliente);
+	            int qtd_estoque_atual = daoProd.retornaEstoqueAtual(produto.getId());
+	            int qtd_atualizada = qtd_estoque_atual - quantidade;
+	            daoProd.baixarEstoque(produto.getId(), qtd_atualizada);
+	        }
 
-		novoPedido.setDataPeedido(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+	        // Limpa o carrinho da sessão
+	        session.removeAttribute("carrinho");
+	        session.removeAttribute("itens");
 
-		novoPedido.setStatus("Pendente");
+	        response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?abrirModalPedidos=true&mensagem=" +
+	                URLEncoder.encode("Pedido finalizado com sucesso!", "UTF-8"));
 
-		novoPedido.setObservacoes(observacoes);
-
-		novoPedido.setFormapagamento(formaPagamento);
-		
-		String subtotalStr = request.getParameter("subtotal"); // Pegando o valor do input hidden 'subtotal'
-
-		if (subtotalStr != null && !subtotalStr.trim().isEmpty()) {
-		    // A substituição de vírgula por ponto já pode ter sido feita pelo JS, mas é bom ter uma redundância aqui
-		    // caso o JS falhe ou o formato seja diferente.
-		    subtotalStr = subtotalStr.replace(",", "."); 
-		    try {
-		        double subtotal = Double.parseDouble(subtotalStr);
-		        novoPedido.setTotalPedido(subtotal);
-		    } catch (NumberFormatException e) {
-		        System.err.println("Erro: O subtotal recebido ('" + subtotalStr + "') não é um número válido.");
-		        // Você deve definir um comportamento aqui:
-		        // 1. Definir um valor padrão (ex: 0.0)
-		        // novoPedido.setTotalPedido(0.0);
-		        // 2. Lançar uma exceção ou redirecionar com mensagem de erro
-		        response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro=" + URLEncoder.encode("Valor do subtotal inválido.", "UTF-8"));
-		        return; // Importante para parar a execução se o valor for inválido
-		    }
-		} else {
-		    System.err.println("Erro: Subtotal não foi enviado ou está vazio.");
-		    // Trate este caso:
-		    // 1. Definir um valor padrão (ex: 0.0)
-		    novoPedido.setTotalPedido(0.0); // Ou, se o subtotal é obrigatório, trate como um erro grave:
-		    // response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro=" + URLEncoder.encode("Subtotal do pedido é obrigatório.", "UTF-8"));
-		    // return;
-		}
-
-		PedidosDAO pedidoDAO = null;
-
-		ProdutosDAO daoProd = null;
-
-		ItensPedidoDAO daoit = null;
-
-		try {
-
-			pedidoDAO = new PedidosDAO(empresa);
-
-			daoProd = new ProdutosDAO(empresa);
-
-			daoit = new ItensPedidoDAO(empresa);
-
-			pedidoDAO.cadastrarPedido(novoPedido);
-
-			for (int i = 0; i < itensArray.length(); i++) {
-
-				JSONObject linha = itensArray.getJSONObject(i);
-
-				int quantidade = linha.getInt("quantidade");
-
-				double precoUnitario = linha.getDouble("precoUnitario");
-
-				int cdProduto = linha.getInt("idProduto");
-
-				Produtos produto = new Produtos();
-
-				produto.setId(cdProduto);
-
-				ItensPedidos itp = new ItensPedidos();
-
-				itp.setPedido(novoPedido);
-
-				itp.setProduto(produto);
-
-				itp.setQuantidade(quantidade);
-
-				itp.setPrecoUnitario(precoUnitario);
-
-				daoit.inserirItensPedidos(itp);
-
-				int qtd_estoque_atual = daoProd.retornaEstoqueAtual(produto.getId());
-
-				int qtd_atualizada = qtd_estoque_atual - quantidade;
-
-				daoProd.baixarEstoque(produto.getId(), qtd_atualizada);
-
-			}
-
-			session.removeAttribute("carrinho");
-
-			session.removeAttribute("itens");
-
-			response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?abrirModalPedidos=true&mensagem="
-					+ URLEncoder.encode("Pedido finalizado com sucesso!", "UTF-8"));
-
-		} catch (SQLException e) {
-
-			e.printStackTrace();
-
-			response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro="
-					+ URLEncoder.encode("Erro ao processar o pedido: " + e.getMessage(), "UTF-8"));
-
-		} catch (ClassNotFoundException e) {
-
-			e.printStackTrace();
-
-			response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro="
-					+ URLEncoder.encode("Erro interno do sistema. Entre em contato com o suporte.", "UTF-8"));
-
-		}
-
+	    } catch (SQLException | ClassNotFoundException e) {
+	        e.printStackTrace();
+	        response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro=" +
+	                URLEncoder.encode("Erro ao processar o pedido: " + e.getMessage(), "UTF-8"));
+	    }
 	}
+
+	// ✅ Função auxiliar para converter valores monetários do formato BR para Java
+	private double parseValorMonetarioBR(String valor) {
+	    try {
+	        valor = valor.replace(".", "").replace(",", ".").trim();
+	        return Double.parseDouble(valor);
+	    } catch (Exception e) {
+	        System.err.println("Erro ao converter valor monetário: '" + valor + "'");
+	        return -1;
+	    }
+	}
+
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
