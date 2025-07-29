@@ -8,16 +8,23 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 import javax.imageio.ImageIO;
 import javax.naming.NamingException;
 
+import org.apache.tomcat.jakartaee.commons.io.output.ByteArrayOutputStream;
+
+import com.google.gson.Gson;
+
+import DAO.EmpresaDAO;
 import DAO.UsuarioDAO;
 import DAO.VendasDAO;
 import DAO.createData;
 import DAO.itensVendaDAO;
 import Model.Empresa;
+import Model.HorarioFuncionamento;
 import Model.ItensVenda;
 import Model.Usuario;
 import Model.Vendas;
@@ -39,7 +46,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 
 @WebServlet(urlPatterns = { "/selecionarVenda", "/totalVendas", "/CadastroUserEmpresa", "/RecuperaSenhaServlet",
-		"/AtualizaçãoSenha" })
+		"/AtualizaçãoSenha","/selecionarEmpresa","/atualizaEmpresa" })
 @MultipartConfig(
 		fileSizeThreshold = 1024 * 1024 * 2, // 2MB - Tamanho do arquivo na memória antes de gravar no disco
 	    maxFileSize = 1024 * 1024 * 5, // 5MB - Tamanho máximo do arquivo permitido
@@ -48,6 +55,7 @@ import jakarta.servlet.http.Part;
 public class incialServer extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private Connection con;
+	 private Gson gson = new Gson();
 
 	public incialServer() {
 		super();
@@ -91,7 +99,25 @@ public class incialServer extends HttpServlet {
 				e.printStackTrace();
 			}
 
-		} else if (action.equals("/AtualizaçãoSenha")) {
+		}else if (action.equals("/selecionarEmpresa") || action.equals("/selecionarEmpresa")) { // Adicionado '|| action.equals("/empresa")'
+		    try {
+		        selecionaEmpresa(request, response);
+		    } catch (ServletException e) {
+		        e.printStackTrace();
+		    } catch (IOException e) {
+		        e.printStackTrace();
+		    }
+		}
+		else if (action.equals("/atualizaEmpresa")) { // Adicionado '|| action.equals("/empresa")'
+		    try {
+		    	atualizaEmpresa(request, response);
+		    } catch (ServletException e) {
+		        e.printStackTrace();
+		    } catch (IOException e) {
+		        e.printStackTrace();
+		    }
+		}
+		else if (action.equals("/AtualizaçãoSenha")) {
 			try {
 				try {
 					atualizaSenha(request, response);
@@ -115,6 +141,152 @@ public class incialServer extends HttpServlet {
 
 		}
 	}
+
+	private void selecionaEmpresa(HttpServletRequest request, HttpServletResponse response)
+	        throws ServletException, IOException {
+
+	    try {
+	        // Pega o parâmetro do id da empresa
+	        int idEmpresa = Integer.parseInt(request.getParameter("id"));
+
+	        // Cria o DAO (ajuste conforme seu construtor e onde a conexão é estabelecida)
+	        // **Verifique se 'empresaNomeSessao' é realmente o que o DAO precisa para a conexão**
+	        String empresaNomeSessao = (String) request.getSession().getAttribute("empresa");
+	        EmpresaDAO dao = new EmpresaDAO(empresaNomeSessao);
+
+	        // 1. Busca APENAS os dados básicos da empresa
+	        Empresa empresa = dao.retornCompany(idEmpresa);
+
+	        // 2. Busca os horários de funcionamento SEPARADAMENTE
+	        List<HorarioFuncionamento> horarios = new ArrayList<>(); // Inicializa uma lista vazia
+	        if (empresa != null) { // Apenas se a empresa foi encontrada, busca os horários
+	            horarios = dao.retornarHorariosPorEmpresa(idEmpresa); // Usando o novo método que discutimos
+	        }
+
+	        // Passa a empresa para o JSP
+	        request.setAttribute("empresa", empresa);
+
+	        // Passa a lista de horários para o JSP
+	        request.setAttribute("horariosEmpresa", horarios); // Um novo atributo para os horários
+
+	        // Encaminha para o JSP que contém o modal
+	        request.getRequestDispatcher("Home.jsp").forward(request, response);
+
+	    } catch (NumberFormatException e) {
+	        // Lida com erro se 'id' não for um número válido
+	        e.printStackTrace();
+	        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID da empresa inválido.");
+	    } catch (SQLException e) {
+	        // Lida com erros de banco de dados
+	        e.printStackTrace();
+	        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro de banco de dados ao carregar empresa.");
+	    } catch (Exception e) {
+	        // Lida com outras exceções inesperadas
+	        e.printStackTrace();
+	        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro inesperado ao carregar empresa.");
+	    }
+	}
+	
+	
+
+	public void atualizaEmpresa(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+
+        EmpresaDAO dao = null;
+        try {
+            String empresaNomeSessao = (String) request.getSession().getAttribute("empresa");
+            dao = new EmpresaDAO(empresaNomeSessao);
+
+            int idEmpresa = Integer.parseInt(request.getParameter("idEmpresa"));
+            String nomeEmpresa = request.getParameter("nomeEmpresa");
+            String cnpjEmpresa = request.getParameter("empresaCnpj");
+            String enderecoEmpresa = request.getParameter("empresaEndereco");
+
+            byte[] logoBytes = null;
+            Part filePart = request.getPart("logoEmpresa");
+            if (filePart != null && filePart.getSize() > 0) {
+                try (InputStream fileContent = filePart.getInputStream();
+                     ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = fileContent.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    logoBytes = outputStream.toByteArray();
+                }
+            } else {
+                // Lógica para manter a logo existente se nenhuma nova for enviada
+                // Primeiro, obtenha a empresa atual do banco para pegar a logo existente
+                Empresa empresaExistente = dao.retornCompany(idEmpresa);
+                if (empresaExistente != null) {
+                    logoBytes = empresaExistente.getLogo();
+                }
+                // Se empresaExistente for null (empresa não encontrada) ou não tiver logo, logoBytes permanecerá null
+            }
+
+            Empresa empresa = new Empresa();
+            empresa.setId(idEmpresa);
+            empresa.setNome(nomeEmpresa);
+            empresa.setCnpj(cnpjEmpresa);
+            empresa.setEndereco(enderecoEmpresa);
+            empresa.setLogo(logoBytes);
+
+            dao.atualizarEmpresa(empresa);
+
+            // 2. Coleta os dados dos Horários de Funcionamento para TODOS os 7 dias
+            List<HorarioFuncionamento> horarios = new ArrayList<>();
+            String[] diasSemana = {"Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"};
+
+            for (int i = 0; i < diasSemana.length; i++) {
+                boolean aberto = request.getParameter("aberto_" + i) != null; // True se marcado, False se desmarcado
+                String horaAbertura = request.getParameter("abertura_" + i);
+                String horaFechamento = request.getParameter("fechamento_" + i);
+                String observacao = request.getParameter("observacao_" + i);
+
+                // *** MUDANÇA AQUI: SEMPRE ADICIONE O HORARIOFUNCIONAMENTO À LISTA ***
+                // Se o dia não estiver aberto, as horas podem ser null ou vazias,
+                // mas o status 'aberto' será false.
+                HorarioFuncionamento hf = new HorarioFuncionamento(
+                    i,
+                    aberto ? horaAbertura : null, // Passa null se não estiver aberto
+                    aberto ? horaFechamento : null, // Passa null se não estiver aberto
+                    aberto, // Este é o boolean que queremos salvar!
+                    observacao
+                );
+                horarios.add(hf);
+
+                System.out.println("Dia " + i + ": Aberto=" + aberto + ", Abertura=" + horaAbertura + ", Fechamento=" + horaFechamento + ", Observacao=" + observacao);
+            }
+
+            dao.atualizarHorariosFuncionamento(idEmpresa, horarios);
+
+            // Redireciona de volta para o menu.jsp e reabre o modal com os dados atualizados
+            RequestDispatcher rd = request.getRequestDispatcher("Home.jsp");
+
+            rd.forward(request, response);// Redireciona para o Servlet que carrega e abre o modal
+
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID da empresa inválido.");
+            e.printStackTrace();
+        } catch (SQLException e) {
+            System.err.println("Erro de banco de dados ao salvar dados da empresa: " + e.getMessage());
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro de banco de dados ao salvar dados da empresa: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado ao salvar dados da empresa: " + e.getMessage());
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro inesperado ao salvar dados da empresa: " + e.getMessage());
+        } finally {
+            // Lógica para fechar a conexão se necessário (se não for gerenciada por um pool)
+            // if (dao != null && dao.con != null) {
+            //     try { dao.con.close(); } catch (SQLException e) { e.printStackTrace(); }
+            // }
+        }
+    }
+	
+
 
 	private void atualizaSenha(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException, SQLException, ClassNotFoundException, NamingException {
@@ -228,76 +400,115 @@ public class incialServer extends HttpServlet {
 	 protected void createBase(HttpServletRequest request, HttpServletResponse response)
 	            throws ServletException, IOException {
 
-	        String empresa = request.getParameter("base");
+		request.setCharacterEncoding("UTF-8");
 
-	        if (empresa != null && !empresa.trim().isEmpty()) {
-	            try {
-	                // Criar banco e tabelas
-	                createData data = new createData(empresa);
+        String empresaBaseNome = request.getParameter("base"); // Corrigido para "base" do JSP
 
-	                // Coletar dados do usuário
-	                String nomeUsuario = request.getParameter("nome");
-	                String usuarioTelefone = request.getParameter("telefone");
-	                String usuarioEmail = request.getParameter("email");
-	                String usuarioSenha = request.getParameter("senha");
-	                String empresaNome = request.getParameter("nomeEmpresa");
-	                String empresaCnpj = request.getParameter("empresaCnpj");
-	                String empresaEndereco = request.getParameter("empresaEdereco");
+        if (empresaBaseNome != null && !empresaBaseNome.trim().isEmpty()) {
+            try {
+                // Instancia seu DAO principal, que agora precisa de uma conexão
+                // createData data = new createData(empresaBaseNome); // Isso deve criar a conexão e, opcionalmente, o BD/tabelas
 
-	                byte[] logoBytes = null;
-	                Image logoImage = null;
+                // **Importante:** Assumindo que `createData` lida com a conexão.
+                // Se `createData` for o seu DAO principal, você passaria a conexão para ele.
+                // Ex: SeuDaoPrincipal dao = new SeuDaoPrincipal(ConexaoBD.getConnection());
+                // Ou, se `createData` já encapsula a criação da conexão e do DAO
+                createData data = new createData(empresaBaseNome); // Instancia seu objeto DAO/serviço
 
-	                // Verifica se há uma imagem na requisição
-	                if (request.getContentType() != null && request.getContentType().toLowerCase().startsWith("multipart/")) {
-	                    Part filePart = request.getPart("logo");
+                // Coletar dados do usuário
+                String nomeUsuario = request.getParameter("nome");
+                String usuarioTelefone = request.getParameter("telefone");
+                String usuarioEmail = request.getParameter("email");
+                String usuarioSenha = request.getParameter("senha");
 
-	                    if (filePart != null && filePart.getSize() > 0) {
-	                        InputStream inputStream = filePart.getInputStream();
-	                        logoBytes = inputStream.readAllBytes(); // Converte para byte[]
-	                        logoImage = converterImagem(logoBytes); // Converte para java.awt.Image
-	                    }
-	                }
+                // Coletar dados da empresa
+                String empresaNomeFantasia = request.getParameter("nomeEmpresa"); // Corrigido para "nomeEmpresa"
+                String empresaCnpj = request.getParameter("empresaCnpj");
+                String empresaEndereco = request.getParameter("empresaEdereco"); // Corrigido para "empresaEdereco"
 
-	                if (nomeUsuario != null && !nomeUsuario.trim().isEmpty()) {
-	                    // Criar objetos Empresa e Usuário
-	                    Usuario uso = new Usuario();
-	                    Empresa emp = new Empresa();
+                byte[] logoBytes = null;
+                Image logoImage = null; // Para JasperReports, se ainda for usar
 
-	                    uso.setNome(nomeUsuario);
-	                    uso.setTelefone(usuarioTelefone);
-	                    uso.setEmail(usuarioEmail);
-	                    uso.setSenha(usuarioSenha);
+                // Processar upload da logo
+                Part filePart = request.getPart("logo"); // 'logo' é o 'name' do input type="file" no JSP
 
-	                    if (empresaNome != null && !empresaNome.trim().isEmpty()) {
-	                        emp.setNome(empresaNome);
-	                        emp.setCnpj(empresaCnpj);
-	                        emp.setEndereco(empresaEndereco);
-	                        emp.setLogo(logoBytes);
-	                    }
+                if (filePart != null && filePart.getSize() > 0) {
+                    InputStream inputStream = filePart.getInputStream();
+                    logoBytes = inputStream.readAllBytes();
+                    logoImage = converterImagem(logoBytes); // Converte para java.awt.Image se necessário
+                }
 
-	                    // Inserir empresa e usuário no banco
-	                    data.inserirEmpresaUsuario(emp, uso);
-	                }
+                // Validar dados básicos antes de criar objetos
+                if (nomeUsuario == null || nomeUsuario.trim().isEmpty() ||
+                    usuarioTelefone == null || usuarioTelefone.trim().isEmpty() ||
+                    usuarioEmail == null || usuarioEmail.trim().isEmpty() ||
+                    usuarioSenha == null || usuarioSenha.trim().isEmpty() ||
+                    empresaNomeFantasia == null || empresaNomeFantasia.trim().isEmpty()) {
 
-	                // Passar imagem para JasperReports se necessário
-	                HashMap<String, Object> parametros = new HashMap<>();
-	                parametros.put("logo", logoImage);
+                    request.setAttribute("errorMessage", "Por favor, preencha todos os campos obrigatórios de Usuário e Empresa.");
+                    request.getRequestDispatcher("cadastroUserEmpresa.jsp").forward(request, response);
+                    return;
+                }
 
-	                // Redireciona para a página de login
-	                RequestDispatcher rd = request.getRequestDispatcher("Login.jsp");
-	                rd.forward(request, response);
+                // Criar objetos Empresa e Usuário
+                Usuario uso = new Usuario();
+                Empresa emp = new Empresa();
 
-	            } catch (Exception e) {
-	                e.printStackTrace();
-	                request.setAttribute("errorMessage", "Ocorreu um erro ao criar o banco de dados e/ou inserir o usuário.");
-	                RequestDispatcher rd = request.getRequestDispatcher("error.jsp");
-	                rd.forward(request, response);
-	            }
-	        } else {
-	            request.setAttribute("errorMessage", "O nome da base de dados não pode ser vazio.");
-	            RequestDispatcher rd = request.getRequestDispatcher("error.jsp");
-	            rd.forward(request, response);
-	        }
+                uso.setNome(nomeUsuario);
+                uso.setTelefone(usuarioTelefone);
+                uso.setEmail(usuarioEmail);
+                uso.setSenha(usuarioSenha); // A senha será hashed no DAO
+
+                emp.setNome(empresaNomeFantasia); // Nome fantasia para a coluna 'nome' da tb_empresa
+                emp.setCnpj(empresaCnpj);
+                emp.setEndereco(empresaEndereco);
+                emp.setLogo(logoBytes);
+
+                // --- Coleta dos Horários de Funcionamento ---
+                List<HorarioFuncionamento> horarios = new ArrayList<>();
+                // O loop no JSP vai de 0 a 6 (Domingo a Sábado)
+                for (int i = 0; i < 7; i++) {
+                    boolean aberto = request.getParameter("aberto_" + i) != null; // 'on' se marcado, null se não
+                    String horaAbertura = request.getParameter("abertura_" + i);
+                    String horaFechamento = request.getParameter("fechamento_" + i);
+
+                    // Se o dia não estiver marcado como aberto, garantimos que horários sejam nulos no objeto
+                    if (!aberto) {
+                        horaAbertura = null;
+                        horaFechamento = null;
+                    }
+
+                    // Observação (se você tiver um campo para isso, senão pode ser null)
+                    String observacao = null; // Ex: request.getParameter("observacao_" + i);
+
+                    // Cria o objeto HorarioFuncionamento e adiciona à lista
+                    HorarioFuncionamento horario = new HorarioFuncionamento(i, horaAbertura, horaFechamento, aberto, observacao);
+                    horarios.add(horario);
+                }
+
+                // Inserir empresa, usuário e horários no banco
+                // Modificado para passar a lista de horários
+                data.inserirEmpresaUsuario(emp, uso, horarios);
+
+                // Passar imagem para JasperReports se necessário (se 'logoImage' ainda for usado)
+                // HashMap<String, Object> parametros = new HashMap<>();
+                // parametros.put("logo", logoImage); // Isso geralmente é feito em um servlet de relatório
+
+                // Redireciona para a página de login ou de sucesso
+                request.setAttribute("successMessage", "Cadastro realizado com sucesso! Faça seu login.");
+                request.getRequestDispatcher("Login.jsp").forward(request, response); // Ou uma página de sucesso
+
+            } catch (Exception e) {
+                e.printStackTrace(); // Log completo do erro no console do servidor
+                // Define uma mensagem de erro mais amigável para o usuário
+                request.setAttribute("errorMessage", "Ocorreu um erro ao realizar o cadastro: " + e.getMessage());
+                // Redireciona de volta para o próprio formulário ou para uma página de erro dedicada
+                request.getRequestDispatcher("cadastroUserEmpresa.jsp").forward(request, response); // Melhor voltar para o formulário
+            }
+        } else {
+            request.setAttribute("errorMessage", "O nome da base de dados (identificador da empresa) não pode ser vazio.");
+            request.getRequestDispatcher("cadastroUserEmpresa.jsp").forward(request, response); // Volta para o formulário
+        }
 	    }
 
 	    /**

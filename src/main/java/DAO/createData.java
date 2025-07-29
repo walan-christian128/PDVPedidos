@@ -2,14 +2,18 @@ package DAO;
 
 import java.io.ByteArrayInputStream;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 import Conexao.ConectionFactory;
 import Model.Empresa;
+import Model.HorarioFuncionamento;
 import Model.PasswordUtil;
 import Model.Usuario;
 
@@ -201,7 +205,70 @@ public class createData {
                     "CONSTRAINT fk_usuario_empresa FOREIGN KEY (empresaID) REFERENCES tb_empresa(id) ON DELETE CASCADE ON UPDATE CASCADE)";
 
             statement.executeUpdate(createTable_8);
+            
+            String create_table_9 = "CREATE TABLE `tb_horarios_funcionamento` ( "
+            		+ "  `id` int NOT NULL AUTO_INCREMENT, "
+            		+ "  `id_empresa` int NOT NULL, "
+            		+ "  `dia_semana` int NOT NULL, "
+            		+ "  `hora_abertura` time DEFAULT NULL, "
+            		+ "  `hora_fechamento` time DEFAULT NULL, "
+            		+ "  `aberto` tinyint(1) NOT NULL DEFAULT '1', "
+            		+ "  `observacao` varchar(255) DEFAULT NULL, "
+            		+ "  PRIMARY KEY (`id`), "
+            		+ "  KEY `idx_id_empresa` (`id_empresa`), "
+            		+ "  KEY `idx_dia_semana` (`dia_semana`), "
+            		+ "  CONSTRAINT `fk_empresa_horario` FOREIGN KEY (`id_empresa`) REFERENCES `tb_empresa` (`id`) ON DELETE CASCADE ON UPDATE CASCADE "
+            		+ ")";
+            
+            
+            statement.executeUpdate(create_table_9);
+            
+            String createTable11 = "CREATE TABLE `tb_cliente_pedido` ( "
+            		+ "  `id` int NOT NULL AUTO_INCREMENT, "
+            		+ "  `nome` varchar(100) DEFAULT NULL, "
+            		+ "  `telefone` varchar(100) DEFAULT NULL, "
+            		+ "  `endereco` varchar(100) DEFAULT NULL, "
+            		+ "  `numero` varchar(100) DEFAULT NULL, "
+            		+ "  `bairro` varchar(100) DEFAULT NULL, "
+            		+ "  `cidade` varchar(100) DEFAULT NULL, "
+            		+ "  `estado` varchar(100) DEFAULT NULL, "
+            		+ "  `email` varchar(100) DEFAULT NULL, "
+            		+ "  `senha` varchar(100) DEFAULT NULL, "
+            		+ "  PRIMARY KEY (`id`) "
+            		+ ")";
+            
+            statement.executeUpdate(createTable11);
+            
+            String createtable10 = "CREATE TABLE `pedidos` ( "
+            		+ "  `id_pedido` int NOT NULL AUTO_INCREMENT, "
+            		+ "  `clientepedido_id` int DEFAULT NULL, "
+            		+ "  `data_pedido` timestamp NULL DEFAULT CURRENT_TIMESTAMP, "
+            		+ "  `status` varchar(50) DEFAULT NULL, "
+            		+ "  `observacoes` text, "
+            		+ "  `forma_pagamento` varchar(100) DEFAULT NULL, "
+            		+ "  `total_pedido` decimal(10,2) DEFAULT NULL, "
+            		+ "  PRIMARY KEY (`id_pedido`), "
+            		+ "  KEY `clientepedido_id` (`clientepedido_id`), "
+            		+ "  CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`clientepedido_id`) REFERENCES `tb_cliente_pedido` (`id`) "
+            		+ ")";
+            statement.executeUpdate(createtable10);
 
+            
+            String createTable12 = "CREATE TABLE `itens_pedido` ( "
+            		+ "  `id_item` int NOT NULL AUTO_INCREMENT, "
+            		+ "  `pedido_id` int DEFAULT NULL, "
+            		+ "  `produto_id` int DEFAULT NULL, "
+            		+ "  `quantidade` int DEFAULT NULL, "
+            		+ "  `preco_unitario` decimal(10,2) DEFAULT NULL, "
+            		+ "  PRIMARY KEY (`id_item`), "
+            		+ "  KEY `pedido_id` (`pedido_id`), "
+            		+ "  KEY `produto_id` (`produto_id`), "
+            		+ "  CONSTRAINT `itens_pedido_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id_pedido`), "
+            		+ "  CONSTRAINT `itens_pedido_ibfk_2` FOREIGN KEY (`produto_id`) REFERENCES `tb_produtos` (`id`) "
+            		+ ")";
+            statement.executeUpdate(createTable12);
+            
+            
             System.out.println("Tabelas criadas com sucesso!");
         } finally {
             statement.close();
@@ -209,7 +276,7 @@ public class createData {
     }
 
     @SuppressWarnings("static-access")
-    public void inserirEmpresaUsuario(Empresa emp, Usuario uso) throws SQLException {
+    public void inserirEmpresaUsuario(Empresa emp, Usuario uso, List<HorarioFuncionamento> horarios) throws SQLException {
         if (this.con == null) {
             System.err.println("Erro: Conexão com o banco de dados não foi estabelecida.");
             return;
@@ -220,13 +287,14 @@ public class createData {
 
         String sqlEmpresa = "INSERT INTO tb_empresa (nome, cnpj, endereco, logo) VALUES (?, ?, ?, ?)";
         String sqlUsuario = "INSERT INTO tb_usuario (NOME, TELEFONE, EMAIL, SENHA, empresaID) VALUES (?, ?, ?, ?, ?)";
+        // Novo SQL para inserir horários de funcionamento
+        String sqlHorario = "INSERT INTO tb_horarios_funcionamento (id_empresa, dia_semana, hora_abertura, hora_fechamento, aberto, observacao) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (
             PreparedStatement stmtEmpresa = con.prepareStatement(sqlEmpresa, Statement.RETURN_GENERATED_KEYS);
-            PreparedStatement stmtUsuario = con.prepareStatement(sqlUsuario)
+            PreparedStatement stmtUsuario = con.prepareStatement(sqlUsuario);
+            PreparedStatement stmtHorario = con.prepareStatement(sqlHorario) // Novo PreparedStatement
         ) {
-            PasswordUtil pass = new PasswordUtil();
-
             // Inserindo a empresa
             stmtEmpresa.setString(1, emp.getNome());
             stmtEmpresa.setString(2, emp.getCnpj());
@@ -239,8 +307,6 @@ public class createData {
                 stmtEmpresa.setNull(4, Types.BLOB);
             }
 
-
-
             stmtEmpresa.executeUpdate();
 
             // Obtendo o ID gerado da empresa
@@ -251,6 +317,10 @@ public class createData {
             }
             rs.close();
 
+            if (empresaId == 0) {
+                 throw new SQLException("Não foi possível obter o ID gerado para a empresa.");
+            }
+
             // Inserindo o usuário associado à empresa
             stmtUsuario.setString(1, uso.getNome());
             stmtUsuario.setString(2, uso.getTelefone());
@@ -260,20 +330,55 @@ public class createData {
 
             stmtUsuario.executeUpdate();
 
+            // Inserindo os horários de funcionamento
+            if (horarios != null && !horarios.isEmpty()) {
+                for (HorarioFuncionamento h : horarios) {
+                    stmtHorario.setInt(1, empresaId); // FK da empresa
+                    stmtHorario.setInt(2, h.getDiaSemana());
+                    
+                    // Tratamento para horários nulos se o dia estiver fechado
+                    if (h.getHoraAbertura() != null && !h.getHoraAbertura().isEmpty()) {
+                        stmtHorario.setString(3, h.getHoraAbertura());
+                    } else {
+                        stmtHorario.setNull(3, Types.TIME);
+                    }
+
+                    if (h.getHoraFechamento() != null && !h.getHoraFechamento().isEmpty()) {
+                        stmtHorario.setString(4, h.getHoraFechamento());
+                    } else {
+                        stmtHorario.setNull(4, Types.TIME);
+                    }
+                    
+                    stmtHorario.setBoolean(5, h.isAberto());
+                    
+                    if (h.getObservacao() != null && !h.getObservacao().isEmpty()) {
+                        stmtHorario.setString(6, h.getObservacao());
+                    } else {
+                        stmtHorario.setNull(6, Types.VARCHAR);
+                    }
+                    
+                    stmtHorario.addBatch(); // Adiciona ao batch para inserção em massa
+                }
+                stmtHorario.executeBatch(); // Executa todas as inserções de horário de uma vez
+            }
+
+
             // Commit da transação
             con.commit();
-            System.out.println("Empresa e usuário inseridos com sucesso!");
+            System.out.println("Empresa, usuário e horários inseridos com sucesso!");
         } catch (SQLException e) {
             // Rollback em caso de erro
             con.rollback();
-            System.err.println("Erro ao inserir empresa e usuário: " + e.getMessage());
+            System.err.println("Erro ao inserir empresa, usuário ou horários: " + e.getMessage());
             e.printStackTrace();
+            throw e; // Re-lança a exceção para que o Servlet possa capturá-la
         } finally {
             // Retorna o auto-commit ao normal
             con.setAutoCommit(true);
         }
     }
-
+ // Seu método original, para retornar apenas a empresa
+   
 
 
 }
