@@ -99,6 +99,7 @@ public class produtosServer extends HttpServlet {
 			request.setAttribute("qtd_estoque", prod.getQtd_estoque());
 			request.setAttribute("preco_de_compra", prod.getPreco_de_compra());
 			request.setAttribute("preco_de_venda", prod.getPreco_de_venda());
+			request.setAttribute("status", prod.getStatus());
 			request.setAttribute("logo", prod.getImagem());
 			
 			request.setAttribute("for_id", prod.getFornecedor().getNome());
@@ -179,6 +180,9 @@ public class produtosServer extends HttpServlet {
 		                        if (fieldValue != null && !fieldValue.isEmpty()) {
 		                            prod.setPreco_de_venda(Double.parseDouble(fieldValue.replace(",", ".")));
 		                        }
+		                    case "status":
+		                          prod.setStatus(fieldValue);
+		                       
 		                        break;
 		                    case "for_id":
 		                        // Armazena o ID do fornecedor para ser processado após a iteração.
@@ -266,6 +270,8 @@ public class produtosServer extends HttpServlet {
 			if (precoVendaStr != null && !precoVendaStr.isEmpty()) {
 				prod.setPreco_de_venda(Double.parseDouble(precoVendaStr));
 			}
+			String statusstr = request.getParameter("status");
+			prod.setStatus(statusstr);
 			
 			try {
 				Part filePart = request.getPart("logo");

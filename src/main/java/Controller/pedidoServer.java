@@ -13,13 +13,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import jakarta.servlet.http.HttpSession;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 
 import java.net.URLEncoder;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.text.DecimalFormat;
@@ -35,12 +43,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import java.util.Date;
-
+import java.util.HashMap;
 import java.util.Iterator;
 
 import java.util.List;
 
 import java.util.Locale;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.naming.NamingException;
 
 import org.json.JSONArray;
 
@@ -48,8 +61,9 @@ import org.json.JSONObject;
 
 import com.google.gson.Gson;
 
+import Conexao.ConectionFactory;
 import Model.Clientepedido;
-
+import Model.Empresa;
 import Model.ItemCarrinho;
 
 import Model.ItensPedidos;
@@ -67,15 +81,17 @@ import DAO.ItensPedidoDAO;
 import DAO.PedidosDAO;
 
 import DAO.ProdutosDAO;
-
+import DAO.UsuarioDAO;
+import DAO.VendasDAO;
 import DAO.itensVendaDAO;
 
 @WebServlet(urlPatterns = { "/pedidoServer", "/selecionarVendaCarrinho", "/finalizarPedidoServlet",
-		"/listarPedidosCliente", "/listarPedidos","/selecionarPedido","/getPedidosEntreguesJson" })
+		"/listarPedidosCliente", "/listarPedidos","/selecionarPedido","/getPedidosEntreguesJson","/exibirNotaPedido" })
 
 public class pedidoServer extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
+	 private static final Logger LOGGER = Logger.getLogger(vendasServer.class.getName());
 
 	public pedidoServer() {
 
@@ -87,101 +103,146 @@ public class pedidoServer extends HttpServlet {
 			throws ServletException, IOException {
 
 		String acao = request.getParameter("acao");
-
 		String servletPath = request.getServletPath();
 
 		System.out.println("doGet - Servlet Path: " + servletPath + ", Ação: " + acao);
 
 		if ("/listarPedidosCliente".equals(servletPath)) {
-
 			try {
-
 				listarPedidosCliente(request, response);
-
 			} catch (ClassNotFoundException | SQLException e) {
-
 				e.printStackTrace();
-
 				response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao carregar seus pedidos.");
-
 			}
-
-		}	else if ("/getPedidosEntreguesJson".equals(servletPath)) {
-
+		} else if ("/exibirNotaPedido".equals(servletPath)) { // <-- CORREÇÃO AQUI
+			try {
+				imprimirPedido(request, response);
+			} catch (ClassNotFoundException | ServletException | IOException | NamingException e) {
+				e.printStackTrace();
+				response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao gerar relatório.");
+			}
+		} else if ("/getPedidosEntreguesJson".equals(servletPath)) {
 			listarPedidosEntregue(request, response);
-
-		} 
-		else if ("remover".equals(acao)) {
-
+		} else if ("remover".equals(acao)) {
 			String idParam = request.getParameter("id");
-
 			if (idParam != null && !idParam.isEmpty()) {
-
 				try {
-
 					int id = Integer.parseInt(idParam);
-
 					removerItemDoCarrinho(request, response, id);
-
 				} catch (NumberFormatException e) {
-
 					response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID de produto inválido para remoção.");
-
 				}
-
 			} else {
-
 				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "ID do produto não fornecido para remoção.");
-
 			}
-
 		} else if ("ver".equals(acao)) {
-
 			exibirCarrinho(request, response);
-
-		} else if ("/listarPedidos".equals(acao)) {
-
+		} else if ("/listarPedidos".equals(servletPath)) { // <-- CORREÇÃO AQUI
 			listapedidos(request, response);
-
-		}
-		else if ("/selecionarPedido".equals(servletPath)) {
-		    selecionarPedido(request, response);
-		}
-
-		else {
-
+		} else if ("/selecionarPedido".equals(servletPath)) {
+			selecionarPedido(request, response);
+		} else {
 			String idParam = request.getParameter("id");
-
 			String qtdParam = request.getParameter("qtd");
-
 			if (idParam != null && !idParam.isEmpty() && qtdParam != null && !qtdParam.isEmpty()) {
-
 				try {
-
 					int id = Integer.parseInt(idParam);
-
 					int qtd = Integer.parseInt(qtdParam);
-
 					adicionarOuAtualizarCarrinho(request, response, id, qtd);
-
 				} catch (NumberFormatException | ClassNotFoundException e) {
-
 					e.printStackTrace();
-
 					response.sendError(HttpServletResponse.SC_BAD_REQUEST,
 							"ID ou quantidade inválidos para adicionar ao carrinho.");
-
 				}
-
 			} else {
-
 				exibirCarrinho(request, response);
-
 			}
-
 		}
-
 	}
+
+	@SuppressWarnings("unused")
+	private void imprimirPedido(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, ClassNotFoundException, NamingException {
+		
+		HttpSession session = request.getSession();
+        String empresa = (String) session.getAttribute("empresa");
+
+        if (empresa == null) {
+            response.getWriter().write("Empresa não fornecida.");
+            LOGGER.log(Level.WARNING, "Empresa não fornecida.");
+            return;
+        }
+
+        // 🔍 Obtém o ID do pedido da requisição (do parâmetro na URL)
+        String idPedidoStr = request.getParameter("id_pedido");
+        if (idPedidoStr == null || idPedidoStr.isEmpty()) {
+            response.getWriter().write("ID do pedido não fornecido.");
+            LOGGER.log(Level.WARNING, "ID do pedido não fornecido.");
+            return;
+        }
+
+        try (Connection connection = new ConectionFactory().getConnection(empresa)) {
+
+            // Converte o ID do pedido para o tipo numérico esperado
+            int idPedido = Integer.parseInt(idPedidoStr);
+            
+            // 🔄 Caminho do arquivo .jasper no classpath
+            String jasperPath = "RelatorioJasper/comprovantePedido.jasper";
+            
+            // 📂 Obtém o arquivo compilado .jasper do classpath
+            InputStream jasperStream = getClass().getClassLoader().getResourceAsStream(jasperPath);
+            
+            if (jasperStream == null) {
+                response.getWriter().write("Arquivo JASPER não encontrado: " + jasperPath);
+                LOGGER.log(Level.SEVERE, "Arquivo JASPER não encontrado: {0}", jasperPath);
+                return;
+            }
+
+            JasperReport jasperReport = (JasperReport) JRLoader.loadObject(jasperStream);
+
+            // 🎯 Parâmetros do relatório
+            Map<String, Object> parametros = new HashMap<>();
+            
+           
+             UsuarioDAO usuarioDAO = new UsuarioDAO(empresa);
+             Empresa empresaObj = usuarioDAO.retornCompany(new Empresa(), empresa, 0);
+             int cdEmpresa = (empresaObj != null) ? empresaObj.getId() : 0;
+             parametros.put("id_empresa", cdEmpresa);
+
+         
+            parametros.put("id_pedido", idPedido);
+
+            // 📄 Preenche o relatório com os dados
+            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parametros, connection);
+
+            // 📂 Gera o PDF na memória
+            ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
+            JasperExportManager.exportReportToPdfStream(jasperPrint, pdfOutputStream);
+            
+            byte[] pdfBytes = pdfOutputStream.toByteArray();
+
+            // 📡 Configura a resposta HTTP para exibir o PDF no navegador
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "inline; filename=relatorio_pedido_" + idPedido + ".pdf");
+            response.setContentLength(pdfBytes.length);
+
+            try (OutputStream outStream = response.getOutputStream()) {
+                outStream.write(pdfBytes);
+                outStream.flush();
+            }
+
+        } catch (NumberFormatException e) {
+            // Lida com o caso em que o ID do pedido não é um número
+            response.getWriter().write("ID do pedido inválido.");
+            LOGGER.log(Level.WARNING, "ID do pedido inválido: " + idPedidoStr, e);
+        } catch (SQLException | JRException e) {
+            LOGGER.log(Level.SEVERE, "Erro ao gerar relatório para a empresa: " + empresa, e);
+            response.getWriter().write("Erro ao gerar relatório: " + e.getMessage());
+        }
+    }
+		
+		
+		
+	
 
 	private void listarPedidosEntregue(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	    response.setContentType("application/json");
@@ -712,7 +773,7 @@ public class pedidoServer extends HttpServlet {
 	}
 
 	protected void finalizarPedido(HttpServletRequest request, HttpServletResponse response)
-	        throws ServletException, IOException, SQLException, ClassNotFoundException {
+	        throws ServletException, IOException, SQLException, ClassNotFoundException, NamingException {
 
 	    HttpSession session = request.getSession();
 	    String empresa = (String) session.getAttribute("empresa");
@@ -742,6 +803,9 @@ public class pedidoServer extends HttpServlet {
 	    novoPedido.setStatus("Pendente");
 	    novoPedido.setObservacoes(observacoes);
 	    novoPedido.setFormapagamento(formaPagamento);
+	    
+	    UsuarioDAO userDAO = new UsuarioDAO(empresa);
+	    novoPedido.setEmpresa(userDAO.retornCompany(null, empresa, 1));
 
 	    // ✅ Tratamento seguro do subtotal vindo da tela (formato brasileiro)
 	    String subtotalStr = request.getParameter("subtotal");
@@ -839,6 +903,9 @@ public class pedidoServer extends HttpServlet {
 
 				response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro interno ao finalizar o pedido.");
 
+			} catch (NamingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 
 		} else {

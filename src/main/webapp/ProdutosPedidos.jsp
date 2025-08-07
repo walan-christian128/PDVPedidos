@@ -15,7 +15,9 @@ String empresa = (String) session.getAttribute("empresa");
 <%
 List<Produtos> prodp; // Declara a lista
 ProdutosDAO daop = new ProdutosDAO(empresa);
-prodp = daop.listarProdutos(); // Atribui o resultado da busca à lista exibida na tabela
+prodp = daop.listarProdutosPedido(); // Atribui o resultado da busca à lista exibida na tabela
+
+
 %>
 
 
@@ -70,7 +72,9 @@ td a {
 
 </head>
 
+
 <body style="background-image: url('img/Gemini_Generated_Image_kysa9wkysa9wkysa.png'); background-size: cover; background-position: center; margin: 0; padding: 0; height: 100vh;">
+<%@ include file="menuCliente.jsp"%>
 	<div class="container mt-4 text-center">
 		<button type="button" class="btn btn-danger btn-lg"
 			onclick="verCarrinho()">

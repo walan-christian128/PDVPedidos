@@ -63,7 +63,22 @@ lista = dao.listaFornecedores();
                    value="<%= request.getAttribute("preco_de_venda") %>" required>
         </div>
 
-        <div class="mb-3">
+			<div class="col-md-4">
+				<div class="mb-3">
+					<label for="status" class="form-label text-white">Disponivel
+						para venda?</label> <select id="status" name="status" class="form-select">
+						<%
+						String currentStatus = (String) request.getAttribute("status");
+						%>
+						<option value="ativado"
+							<%="ativado".equals(currentStatus) ? "selected" : ""%>>Sim</option>
+						<option value="destivado"
+							<%="destivado".equals(currentStatus) ? "selected" : ""%>>Não</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="mb-3">
             <label for="fornecedor" class="form-label">Fornecedor:</label>
             <select name="for_id" class="form-select" required>
                 <option value="" selected>Selecione o fornecedor</option>

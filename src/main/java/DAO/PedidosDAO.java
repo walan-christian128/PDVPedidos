@@ -41,7 +41,7 @@ public class PedidosDAO {
 	
 	public int cadastrarPedido(Pedidos obj) throws SQLException {
 		
-		String sql = "INSERT INTO pedidos(clientepedido_id, data_pedido, status, observacoes, forma_pagamento, total_pedido) VALUES(?, NOW(), ?, ?, ?, ?)"; 
+		String sql = "INSERT INTO pedidos(clientepedido_id, data_pedido, status, observacoes, forma_pagamento, total_pedido,empresa_id) VALUES(?, NOW(), ?, ?, ?, ?,?)"; 
         int idGerado = -1; // Valor padrão para indicar falha
 
         try (PreparedStatement stmt = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -50,6 +50,7 @@ public class PedidosDAO {
             stmt.setString(3, obj.getObservacoes());
             stmt.setString(4, obj.getFormapagamento());
             stmt.setDouble(5, obj.getTotalPedido());
+            stmt.setInt(6, obj.getEmpresa().getId());
 
             int linhasAfetadas = stmt.executeUpdate(); 
 
@@ -626,5 +627,23 @@ public class PedidosDAO {
         }
        return listaPedidos;
    }
+   
+   
+    public int codigoPedido() {
+        int idPedido = 0;
+        String sql = "SELECT id_pedido FROM pedidos ORDER BY id_pedido DESC LIMIT 1"; // pega o último ID
+        
+        try (PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            if (rs.next()) {
+                idPedido = rs.getInt("id_pedido");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Melhor que deixar vazio
+        }
+        
+        return idPedido;
+    }
 
 }

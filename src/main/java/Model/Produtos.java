@@ -6,7 +6,15 @@ public class Produtos {
 	    private int qtd_estoque;
 	    private Fornecedores fornecedor;
 	    private double preco_de_compra;
-	    private byte[]imagem;
+	    private String status;
+	    public String getStatus() {
+			return status;
+		}
+
+		public void setStatus(String status) {
+			this.status = status;
+		}
+		private byte[]imagem;
 
 
 

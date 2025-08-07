@@ -101,6 +101,7 @@
                                 <th>Margem</th>
                                 <th>Fornecedor</th>
                                 <th>Opções</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,6 +125,7 @@
                                             }
                                         </script>
                                     </td>
+                                    <td><%=listaProdutos.get(i).getStatus() %></td>
                                     <td>
                                         <% for (Fornecedores fornecedorNaLista : listaFornecedores) {
                                             if (fornecedorNaLista.getId() == listaProdutos.get(i).getFornecedor().getId()) { %>
@@ -168,8 +170,18 @@
                             <label for="preco_venda" class="form-label">Preço de Venda:</label>
                             <input type="number" step="0.01" class="form-control" id="preco_venda" name="preco_de_venda">
                         </div>
+						<div class="col-md-4">
+							<div class="mb-3">
+								<label for="status" class="form-label text-white">Disponivel
+									para venda?</label> <select id="status" name="status"
+									class="form-select">
+									<option value="ativado">Sim</option>
+									<option value="destivado">Não</option>
+								</select>
+							</div>
+						</div>
 
-                        <div class="mb-3">
+						<div class="mb-3">
                             <label for="fornecedor" class="form-label">Fornecedor:</label>
                             <select name="for_id" class="form-select" id="fornecedor">
                                 <option value="" selected>Selecione o fornecedor</option>

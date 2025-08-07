@@ -35,13 +35,14 @@ public class ProdutosDAO {
 	public void cadastrar(Produtos obj) {
 		try {
 
-			String sql = "insert into tb_produtos(descricao,qtd_estoque,preco_de_compra,preco_de_venda,for_id,imagem)values(?,?,?,?,?,?)";
+			String sql = "insert into tb_produtos(descricao,qtd_estoque,preco_de_compra,preco_de_venda,for_id,imagem,status)values(?,?,?,?,?,?,?)";
 			PreparedStatement stmt = con.prepareStatement(sql);
 			stmt.setString(1, obj.getDescricao());
 			stmt.setInt(2, obj.getQtd_estoque());
 			stmt.setDouble(3, obj.getPreco_de_compra());
 			stmt.setDouble(4, obj.getPreco_de_venda());
 			stmt.setInt(5, obj.getFornecedor().getId());
+			stmt.setString(7, obj.getStatus());
 			
 			 if (obj.getImagem() != null) {
 	                ByteArrayInputStream bais = new ByteArrayInputStream(obj.getImagem());
@@ -60,6 +61,52 @@ public class ProdutosDAO {
 
 	}
 
+	public List<Produtos> listarProdutosPedido() {
+		List<Produtos> lista = new ArrayList<>();
+		
+		try {
+
+			// 1 passo criar lista de produtos//
+			
+
+			String sql = "select p.id,p.descricao,p.qtd_estoque,p.preco_de_compra,p.preco_de_venda,p.imagem,p.status,f.nome,f.id from tb_produtos as p "
+					+ "inner join tb_fornecedores as f on (p.for_id=f.id)"
+					+ "where p.status = 'ativado'";
+
+			PreparedStatement stmt = con.prepareStatement(sql);
+			ResultSet rs = stmt.executeQuery();
+
+			while (rs.next()) {
+				Produtos obj = new Produtos();
+				Fornecedores f = new Fornecedores();
+
+				obj.setId(rs.getInt("p.id"));
+				obj.setDescricao(rs.getString("p.descricao"));
+				obj.setQtd_estoque(rs.getInt("p.qtd_estoque"));
+				obj.setPreco_de_compra(rs.getDouble("p.preco_de_compra"));
+				obj.setPreco_de_venda(rs.getDouble("p.preco_de_venda"));
+				byte[] imagemBytes = rs.getBytes("imagem");
+				obj.setStatus(rs.getString("p.status"));
+				obj.setImagem(imagemBytes);
+				f.setId(rs.getInt("f.id"));
+				f.setNome(rs.getString(("f.nome")));
+
+				obj.setFornecedor(f);
+
+				lista.add(obj);
+
+			}
+
+			
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		
+
+		}
+		return lista;
+
+	}
 	public List<Produtos> listarProdutos() {
 		List<Produtos> lista = new ArrayList<>();
 		
@@ -68,7 +115,7 @@ public class ProdutosDAO {
 			// 1 passo criar lista de produtos//
 			
 
-			String sql = "select p.id,p.descricao,p.qtd_estoque,p.preco_de_compra,p.preco_de_venda,p.imagem,f.nome,f.id from tb_produtos as p "
+			String sql = "select p.id,p.descricao,p.qtd_estoque,p.preco_de_compra,p.preco_de_venda,p.imagem,p.status,f.nome,f.id from tb_produtos as p "
 					+ "inner join tb_fornecedores as f on (p.for_id=f.id)";
 
 			PreparedStatement stmt = con.prepareStatement(sql);
@@ -84,6 +131,7 @@ public class ProdutosDAO {
 				obj.setPreco_de_compra(rs.getDouble("p.preco_de_compra"));
 				obj.setPreco_de_venda(rs.getDouble("p.preco_de_venda"));
 				byte[] imagemBytes = rs.getBytes("imagem");
+				obj.setStatus(rs.getString("p.status"));
 				obj.setImagem(imagemBytes);
 				f.setId(rs.getInt("f.id"));
 				f.setNome(rs.getString(("f.nome")));
@@ -106,35 +154,43 @@ public class ProdutosDAO {
 	}
 
 	public void alterarProdutos(Produtos obj) {
-        try {
-        	String sql = "UPDATE tb_produtos set descricao=?,preco_de_compra=?,preco_de_venda=?,qtd_estoque=?,for_id=?,imagem=? where id=?";
+	    try {
+	        // A ordem dos '?' deve ser a mesma da ordem que você vai setar os parâmetros
+	        String sql = "UPDATE tb_produtos SET descricao=?, preco_de_compra=?, preco_de_venda=?, qtd_estoque=?, for_id=?, imagem=?, status=? WHERE id=?";
 
-            //Organização SQL e Conexão //
-            PreparedStatement stmt = con.prepareStatement(sql);
+	        PreparedStatement stmt = con.prepareStatement(sql);
 
-            stmt.setString(1, obj.getDescricao());        // Corresponde a descricao=?
-            stmt.setDouble(2, obj.getPreco_de_compra()); // Corresponde a preco_de_compra=?
-            stmt.setDouble(3, obj.getPreco_de_venda());  // Corresponde a preco_de_venda=?
-            stmt.setInt(4, obj.getQtd_estoque());        // Corresponde a qtd_estoque=?
-            stmt.setInt(5, obj.getFornecedor().getId()); // Corresponde a for_id=?
-            
-            if (obj.getImagem() != null) {
-                ByteArrayInputStream bais = new ByteArrayInputStream(obj.getImagem());
-                stmt.setBinaryStream(6, bais, obj.getImagem().length); // Corresponde a imagem=?
-            } else {
-                stmt.setNull(6, Types.BLOB);
-            }
+	        // 1. descricao
+	        stmt.setString(1, obj.getDescricao());
+	        // 2. preco_de_compra
+	        stmt.setDouble(2, obj.getPreco_de_compra());
+	        // 3. preco_de_venda
+	        stmt.setDouble(3, obj.getPreco_de_venda());
+	        // 4. qtd_estoque
+	        stmt.setInt(4, obj.getQtd_estoque());
+	        // 5. for_id
+	        stmt.setInt(5, obj.getFornecedor().getId());
+	        
+	        // 6. imagem
+	        if (obj.getImagem() != null) {
+	            ByteArrayInputStream bais = new ByteArrayInputStream(obj.getImagem());
+	            stmt.setBinaryStream(6, bais, obj.getImagem().length);
+	        } else {
+	            stmt.setNull(6, Types.BLOB);
+	        }
 
-            stmt.setInt(7, obj.getId());
+	        // 7. status
+	        stmt.setString(7, obj.getStatus());
+	        // 8. id
+	        stmt.setInt(8, obj.getId());
 
-            //Execução//
-            stmt.executeUpdate();
-            stmt.close();
+	        // Execução
+	        stmt.executeUpdate();
+	        stmt.close();
 	    } catch (SQLException erro) {
-	        erro.printStackTrace(); // Isso ajudará a identificar o erro específico.
+	        erro.printStackTrace();
 	    }
 	}
-
 
 	public void excluir(Produtos obj) {
 		try {
@@ -228,7 +284,7 @@ public class ProdutosDAO {
 		try {
 
 			// 1 passo criar lista de produtos//
-			String sql = "select p.id,p.descricao,p.qtd_estoque,p.preco_de_compra,p.preco_de_venda,p.imagem,f.nome,f.id from tb_produtos as p "
+			String sql = "select p.id,p.descricao,p.qtd_estoque,p.preco_de_compra,p.preco_de_venda,p.imagem,p.status,f.nome,f.id from tb_produtos as p "
 					+ "inner join tb_fornecedores as f on (p.for_id=f.id) where p.id=?";
 
 			PreparedStatement stmt = con.prepareStatement(sql);
@@ -244,7 +300,7 @@ public class ProdutosDAO {
 				obj.setQtd_estoque(rs.getInt("p.qtd_estoque"));
 				obj.setPreco_de_compra(rs.getDouble("p.preco_de_compra"));
 				obj.setPreco_de_venda(rs.getDouble("p.preco_de_venda"));
-				
+				obj.setStatus(rs.getString("p.status"));
 				byte[] imagemBytes = rs.getBytes("imagem");
 	            obj.setImagem(imagemBytes);
 	            

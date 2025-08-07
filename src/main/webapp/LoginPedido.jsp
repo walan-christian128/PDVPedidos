@@ -83,15 +83,13 @@ if (empresa != null) {
 }
 </style>
 </head>
-<body
-	style="background-image: url('img/vendas-de-compras-da-cyber-monday.jpg'); background-size: auto auto; background-position: center; margin: 0; padding: 0; height: 100vh; width: 100vw;">
-
+<body style="background-image: url('img/Gemini_Generated_Image_kysa9wkysa9wkysa.png'); background-size: cover; background-position: center; margin: 0; padding: 0; height: 100vh;">
 	<div class="imagem">
 		<div class="container h-100">
 			<div class="row h-100 justify-content-center align-items-center">
 				<div class="col-md-6">
 					<div class="well custom-blue-bg box-login text-center">
-						<h1 class="ls-login-logo custom-title text-white">Login Pedido</h1>
+						<h1 class="ls-login-logo custom-title text-dark">Login Pedido</h1>
 						<!-- Adicione a classe custom-title ao tÃ­tulo -->
 
                        

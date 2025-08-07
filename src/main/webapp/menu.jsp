@@ -215,7 +215,7 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="detroyLogaut.jsp">
+                    <a class="nav-link active" href="destroyLogautadm.jsp">
                         <span class="icon"><i class="bi bi-box-arrow-right"></i></span> <span class="txt-link">Sair</span>
                     </a>
                 </li>

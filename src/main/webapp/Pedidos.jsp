@@ -78,6 +78,10 @@ try {
 
 }
 NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+
+
+
+
 %>
 
 <!DOCTYPE html>
@@ -753,130 +757,136 @@ NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", 
 			</div>
 		</div>
 
-		<div class="modal fade" id="gereciarPedido" data-bs-backdrop="static"
-		data-bs-keyboard="false" tabindex="-1"
-		aria-labelledby="staticBackdropLabel" aria-hidden="true">
-		<div
-			class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="staticBackdropLabel">
-						Detalhes do Pedido <span id="modalPedidoId"></span>
-					</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal"
-						aria-label="Close"></button>
-				</div>
-				<div class="modal-body">
-					<div class="bg-light p-4 rounded shadow mb-4">
-						<h5 class="text-center mb-3">Informações do Pedido e Cliente</h5>
-						<div class="row">
-							<div class="col-md-6">
-								<p>
-									<strong>Codigo:</strong> <span id="modalIdPedido"></span>
-								</p>
-								<p>
-									<strong>Data Pedido:</strong> <span id="modalDataPedido"></span>
-								</p>
-								<p>
-									<strong>Status:</strong> <span id="modalStatusPedido"></span>
-								</p>
-								<p>
-									<strong>Total Pedido:</strong> <span id="modalTotalPedido"></span>
-								</p>
-								<p>
-									<strong>Forma Pagamento:</strong> <span
-										id="modalFormaPagamento"></span>
-								</p>
-								<p>
-									<strong>Observações:</strong> <span id="modalObservacoes"></span>
-								</p>
-							</div>
-							<div class="col-md-6">
-								<p>
-									<strong>Cliente:</strong> <span id="modalNomeCliente"></span>
-								</p>
-								<p>
-									<strong>Endereço:</strong> <span id="modalEnderecoCliente"></span>
-								</p>
-								<p>
-									<strong>Número:</strong> <span id="modalNumeroCliente"></span>
-								</p>
-								<p>
-									<strong>CEP:</strong> <span id="modalCepCliente"></span>
-								</p>
-								<p>
-									<strong>Estado:</strong> <span id="modalEstadoCliente"></span>
-								</p>
-								<p>
-									<strong>Telefone:</strong> <span id="modalTelefoneCliente"></span>
-								</p>
-								<p>
-									<strong>Email:</strong> <span id="modalEmailCliente"></span>
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="bg-white p-4 rounded shadow">
-						<h5 class="text-center mb-3">Itens do Pedido</h5>
-						<div class="table-responsive">
-							<table class="table table-striped table-hover">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Quantidade</th>
-										<th>Preço Unitário</th>
-										<th>Subtotal</th>
-									</tr>
-								</thead>
-								<tbody id="modalItensTableBody">
-									<tr>
-										<td colspan="4" class="text-center text-muted">Carregando
-											itens...</td>
-									</tr>
-								</tbody>
-								<tfoot>
-									<tr>
-										<th colspan="3" class="text-end">Total Itens:</th>
-										<th id="modalTotalItens">R$ 0,00</th>
-									</tr>
-								</tfoot>
-							</table>
-						</div>
-					</div>
-				</div>
-
-				<!-- FORMULÁRIO no footer -->
-				<form action="atualizaPedido" method="post">
-					<div class="modal-footer">
-						<input type="hidden" name="acao" value="pedido"> <input
-							type="hidden" name="idPedido" id="formIdPedido">
-
-						<div class="d-flex align-items-center flex-grow-1 me-3">
-							<label for="formStatus" class="form-label mb-0 me-2 text-nowrap">Novo
-								Status:</label> <select class="form-select me-2" name="status"
-								id="formStatus">
-								<option value="Pendente">Pendente</option>
-								<option value="Em Preparo">Em Preparo</option>
-								<option value="Em Rota de Entrega">Em Rota de Entrega</option>
-								<option value="Entregue">Entregue</option>
-								<option value="Reprovado">Reprovado</option>
-							</select> <label for="formObservacoes"
-								class="form-label mb-0 me-2 text-nowrap">Observações:</label>
-							<textarea class="form-control me-2" name="observacoes"
-								id="formObservacoes" rows="1"
-								placeholder="Adicionar observações"></textarea>
-						</div>
-
-						<button type="submit" class="btn btn-success me-2">Atualizar
-							Pedido</button>
-						<button type="button" class="btn btn-secondary"
-							data-bs-dismiss="modal">Fechar</button>
-					</div>
-				</form>
+<div class="modal fade" id="gereciarPedido" data-bs-backdrop="static"
+	data-bs-keyboard="false" tabindex="-1"
+	aria-labelledby="staticBackdropLabel" aria-hidden="true">
+	<div
+		class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h1 class="modal-title fs-5" id="staticBackdropLabel">
+					Detalhes do Pedido <span id="modalPedidoId"></span>
+				</h1>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"
+					aria-label="Close"></button>
 			</div>
+			<div class="modal-body">
+				<div class="bg-light p-4 rounded shadow mb-4">
+					<h5 class="text-center mb-3">Informações do Pedido e Cliente</h5>
+					<div class="row">
+						<div class="col-md-6">
+							<p>
+								<strong>Codigo:</strong> <span id="modalIdPedido"></span>
+							</p>
+							<p>
+								<strong>Data Pedido:</strong> <span id="modalDataPedido"></span>
+							</p>
+							<p>
+								<strong>Status:</strong> <span id="modalStatusPedido"></span>
+							</p>
+							<p>
+								<strong>Total Pedido:</strong> <span id="modalTotalPedido"></span>
+							</p>
+							<p>
+								<strong>Forma Pagamento:</strong> <span
+									id="modalFormaPagamento"></span>
+							</p>
+							<p>
+								<strong>Observações:</strong> <span id="modalObservacoes"></span>
+							</p>
+						</div>
+						<div class="col-md-6">
+							<p>
+								<strong>Cliente:</strong> <span id="modalNomeCliente"></span>
+							</p>
+							<p>
+								<strong>Endereço:</strong> <span id="modalEnderecoCliente"></span>
+							</p>
+							<p>
+								<strong>Número:</strong> <span id="modalNumeroCliente"></span>
+							</p>
+							<p>
+								<strong>CEP:</strong> <span id="modalCepCliente"></span>
+							</p>
+							<p>
+								<strong>Estado:</strong> <span id="modalEstadoCliente"></span>
+							</p>
+							<p>
+								<strong>Telefone:</strong> <span id="modalTelefoneCliente"></span>
+							</p>
+							<p>
+								<strong>Email:</strong> <span id="modalEmailCliente"></span>
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="bg-white p-4 rounded shadow">
+					<h5 class="text-center mb-3">Itens do Pedido</h5>
+					<div class="table-responsive">
+						<table class="table table-striped table-hover">
+							<thead>
+								<tr>
+									<th>Item</th>
+									<th>Quantidade</th>
+									<th>Preço Unitário</th>
+									<th>Subtotal</th>
+								</tr>
+							</thead>
+							<tbody id="modalItensTableBody">
+								<tr>
+									<td colspan="4" class="text-center text-muted">Carregando
+										itens...</td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<th colspan="3" class="text-end">Total Itens:</th>
+									<th id="modalTotalItens">R$ 0,00</th>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<form action="atualizaPedido" method="post">
+				<div class="modal-footer">
+					<input type="hidden" name="acao" value="pedido">
+					<input type="hidden" name="idPedido" id="formIdPedido">
+
+					<div class="d-flex align-items-center flex-grow-1 me-3">
+						<label for="formStatus" class="form-label mb-0 me-2 text-nowrap">Novo
+							Status:</label>
+						<select class="form-select me-2" name="status"
+							id="formStatus">
+							<option value="Pendente">Pendente</option>
+							<option value="Em Preparo">Em Preparo</option>
+							<option value="Em Rota de Entrega">Em Rota de Entrega</option>
+							<option value="Entregue">Entregue</option>
+							<option value="Reprovado">Reprovado</option>
+						</select>
+						<label for="formObservacoes"
+							class="form-label mb-0 me-2 text-nowrap">Observações:</label>
+						<textarea class="form-control me-2" name="observacoes"
+							id="formObservacoes" rows="1"
+							placeholder="Adicionar observações"></textarea>
+					</div>
+
+					<button type="button" class="btn btn-warning" id="btnImprimirPedido">Imprimir Pedido</button>
+
+					<button type="submit" class="btn btn-success me-2">
+						Atualizar Pedido
+					</button>
+					<button type="button" class="btn btn-secondary"
+						data-bs-dismiss="modal">
+						Fechar
+					</button>
+				</div>
+			</form>
 		</div>
 	</div>
+</div>
 
 <div class="modal fade" tabindex="-1" id="atualizarStatus">
   <div class="modal-dialog">
@@ -1290,7 +1300,58 @@ NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", 
             }
         });
     </script>
+  <script>
+//Função que abre o relatório, já corrigida
+ // Função que abre o relatório, já corrigida
+function abrirRelatorio(id) {
+    if (id) {
+        window.open('comprovantePedido.jsp?id_pedido=' + id, '_blank');
+    } else {
+        alert("ID do pedido não encontrado para imprimir.");
+    }
+}
 
+// Evento que escuta a abertura do modal 'gereciarPedido'
+const gerenciarPedidoModal = document.getElementById('gereciarPedido');
+
+gerenciarPedidoModal.addEventListener('show.bs.modal', event => {
+    // Pega o elemento que abriu o modal (botão ou linha da tabela)
+    const trigger = event.relatedTarget;
+    
+    // Pega o ID do pedido do atributo 'data-id-pedido' do elemento que abriu o modal
+    const idPedido = trigger.getAttribute('data-id-pedido');
+
+    // Seleciona o botão de imprimir e o dropdown de status dentro do modal
+    const btnImprimir = gerenciarPedidoModal.querySelector('#btnImprimirPedido');
+    const formStatus = gerenciarPedidoModal.querySelector('#formStatus');
+    const formIdPedido = gerenciarPedidoModal.querySelector('#formIdPedido');
+
+    // 1. Atualiza o hidden input do formulário com o ID do pedido
+    formIdPedido.value = idPedido;
+
+    // 2. Atualiza o texto do botão de impressão
+    btnImprimir.innerText = `Imprimir Pedido #${idPedido}`;
+    
+    // 3. Define a função de click do botão de impressão com o ID correto
+    // Por padrão, o botão está desabilitado, então a função de click não será executada se ele estiver disabled
+    btnImprimir.onclick = () => abrirRelatorio(idPedido);
+
+    // 4. LÓGICA DA CONDIÇÃO: Verifica o status inicial e define o estado do botão
+    function verificarStatusEBotao() {
+        if (formStatus.value === 'Em Preparo') {
+            btnImprimir.disabled = false; // Habilita o botão
+        } else {
+            btnImprimir.disabled = true; // Desabilita o botão
+        }
+    }
+    
+    // Define o estado inicial do botão quando o modal é aberto
+    verificarStatusEBotao();
+
+    // 5. Adiciona um ouvinte de evento para quando o valor do dropdown de status mudar
+    formStatus.addEventListener('change', verificarStatusEBotao);
+});
+    </script>
 
 </body>
 </html>

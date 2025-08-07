@@ -2,6 +2,7 @@ package DAO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import javax.naming.NamingException;
@@ -53,5 +54,33 @@ public class ClientesPedidosDAO {
 	    	
 	    	
 	    }
+public Clientepedido selecionaClientePedido(int codigo) {
+	
+	String sql = " select id,nome,telefone,email,endereco,numero,bairro,cidade,estado from tb_cliente_pedido where id = ? ";
+	Clientepedido cp = new Clientepedido();
+	try {
+		PreparedStatement stmt = con.prepareStatement(sql);
+		stmt.setInt(1, codigo);
+		ResultSet rs = stmt.executeQuery();
+		if(rs.next()) {
+			
+			cp.setId(rs.getInt("id"));
+			cp.setNome(rs.getString("nome"));
+			cp.setCelular(rs.getString("telefone"));
+			cp.setEmail(rs.getString("email"));
+			cp.setEndereco(rs.getString("endereco"));
+			cp.setNumero(rs.getInt("numero"));
+			cp.setBairro(rs.getString("bairro"));
+			cp.setCidade(rs.getString("cidade"));
+			cp.setUf(rs.getString("estado"));
+			
+		}
+		return cp;
+		
+	} catch (Exception e) {
+		return null;
+	}
+	
+}
 
 }
