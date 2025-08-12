@@ -779,11 +779,7 @@ public class pedidoServer extends HttpServlet {
 	    String empresa = (String) session.getAttribute("empresa");
 	    Integer clienteId = (Integer) session.getAttribute("usuarioID");
 
-	    if (clienteId == null) {
-	        response.sendRedirect(request.getContextPath() + "/LoginExpirado.jsp");
-	        return;
-	    }
-
+	
 	    JSONArray itensArray = (JSONArray) session.getAttribute("itens");
 	    if (itensArray == null || itensArray.length() == 0) {
 	        response.sendRedirect(request.getContextPath() + "/ProdutosPedidos.jsp?erro="

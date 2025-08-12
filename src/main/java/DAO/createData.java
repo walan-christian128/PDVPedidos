@@ -151,6 +151,8 @@ public class createData {
                     "for_id int DEFAULT NULL," +
                     "PRIMARY KEY (id)," +
                     "KEY for_id (for_id)," +
+                    "imagem LONGBLOB,"+
+                    "status varchar (500), " +
                     "CONSTRAINT tb_produtos_ibfk_1 FOREIGN KEY (for_id) REFERENCES tb_fornecedores (id)" +
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;";
             statement.executeUpdate(createTable_4);
@@ -247,9 +249,12 @@ public class createData {
             		+ "  `observacoes` text, "
             		+ "  `forma_pagamento` varchar(100) DEFAULT NULL, "
             		+ "  `total_pedido` decimal(10,2) DEFAULT NULL, "
+            		+ "  `empresa_id` int DEFAULT NULL,"
             		+ "  PRIMARY KEY (`id_pedido`), "
             		+ "  KEY `clientepedido_id` (`clientepedido_id`), "
-            		+ "  CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`clientepedido_id`) REFERENCES `tb_cliente_pedido` (`id`) "
+            		+ "  KEY `fk_pedidos_empresa` (`empresa_id`),"
+            		+ "  CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`clientepedido_id`) REFERENCES `tb_cliente_pedido` (`id`), "
+            		+"   CONSTRAINT `fk_pedidos_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `tb_empresa` (`id`)"
             		+ ")";
             statement.executeUpdate(createtable10);
 

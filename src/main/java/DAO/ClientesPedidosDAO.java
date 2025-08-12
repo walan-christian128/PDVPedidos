@@ -4,12 +4,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.naming.NamingException;
 
 import Conexao.ConectionDataBases;
 import Model.Clientepedido;
 import Model.PasswordUtil;
+import Model.Pedidos;
+import Model.Produtos;
 
 public class ClientesPedidosDAO {
 	  private Connection con;
@@ -74,6 +78,8 @@ public Clientepedido selecionaClientePedido(int codigo) {
 			cp.setCidade(rs.getString("cidade"));
 			cp.setUf(rs.getString("estado"));
 			
+			System.out.println("Nome do cliente no DAO: " + cp.getNome());
+			
 		}
 		return cp;
 		
@@ -81,6 +87,41 @@ public Clientepedido selecionaClientePedido(int codigo) {
 		return null;
 	}
 	
+}
+
+public List<Pedidos> pedidosCliente(int codigo) {
+
+    List<Pedidos> lista = new ArrayList<>();
+    String sql = "SELECT id_pedido, "
+            + "date_format(data_pedido, '%d/%m/%Y %H:%i:%s') AS data_formatada,"
+            + "status,"
+            + "observacoes,"
+            + "forma_Pagamento,"
+            + "total_pedido "
+            + "FROM pedidos "
+            + "WHERE clientepedido_id = ?";
+
+    try (PreparedStatement stmt = con.prepareStatement(sql)) {
+        // Define o valor do parâmetro
+        stmt.setInt(1, codigo);
+        try (ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Pedidos ped = new Pedidos();
+                ped.setIdPedido(rs.getInt("id_pedido"));
+                ped.setDataPeedido(rs.getString("data_formatada"));
+                ped.setStatus(rs.getString("status"));
+                ped.setObservacoes(rs.getString("observacoes"));
+                ped.setTotalPedido(rs.getDouble("total_pedido"));
+                // Defina o pagamento aqui, pois ele está no SQL
+                ped.setFormapagamento(rs.getString("forma_Pagamento")); 
+                lista.add(ped);
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace(); // É importante imprimir o erro para depuração
+    }
+
+    return lista;
 }
 
 }

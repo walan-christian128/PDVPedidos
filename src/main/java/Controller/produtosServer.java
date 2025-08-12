@@ -180,9 +180,10 @@ public class produtosServer extends HttpServlet {
 		                        if (fieldValue != null && !fieldValue.isEmpty()) {
 		                            prod.setPreco_de_venda(Double.parseDouble(fieldValue.replace(",", ".")));
 		                        }
+		                        // Adicione o 'break;' aqui para evitar que o próximo 'case' seja executado.
+		                        break; 
 		                    case "status":
-		                          prod.setStatus(fieldValue);
-		                       
+		                        prod.setStatus(fieldValue);
 		                        break;
 		                    case "for_id":
 		                        // Armazena o ID do fornecedor para ser processado após a iteração.

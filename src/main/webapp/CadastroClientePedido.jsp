@@ -94,7 +94,7 @@
     <div class="container form-container">
         <h2 class="text-center mb-5 text-primary">Seus Dados de Cadastro</h2>
 
-        <form action="pedidoServer" method="post" id="cadastroForm"> <%-- Alterado para method="post" para segurança --%>
+        <form action="cadClientePedido" method="get" id="cadastroForm"> <%-- Alterado para method="post" para segurança --%>
             <h5 class="text-center mb-4 text-secondary">Preencha com suas informações</h5>
 
             <div class="row">

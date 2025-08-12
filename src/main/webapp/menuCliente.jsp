@@ -1,17 +1,32 @@
 <%@ page import="Model.Clientepedido" %>
+<%@ page import="DAO.ClientesPedidosDAO" %>
+<%@ page import="Model.Pedidos" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Base64" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
 <%
+    
     Clientepedido clienteSessao = (Clientepedido) session.getAttribute("clienteLogado");
+    String nomeCliente = (clienteSessao != null && clienteSessao.getNome() != null) ? clienteSessao.getNome() : "Cliente";
     Clientepedido clienteModal = (Clientepedido) request.getAttribute("clienteParaModal");
 
     if (clienteSessao == null) {
         response.sendRedirect("LoginPedido.jsp");
         return;
     }
+    String empresaCliente = (String) session.getAttribute("empresa");
+    List<Pedidos> PedidosCliente = new ArrayList<>();
+    try {
+    	ClientesPedidosDAO clienteDAO = new ClientesPedidosDAO(empresaCliente);
+    	PedidosCliente = clienteDAO.pedidosCliente(clienteSessao.getId());
+
+    } catch (Exception e) {
+
+    }
+
 %>
 
 
@@ -64,7 +79,7 @@
         </div>
         <div class="offcanvas-body">
             <div class="mb-3">
-                <p class="h5 text-primary">Bem-vindo, <%= clienteModal.getNome() %></p>
+                <p class="h5 text-primary">Bem-vindo, <%= nomeCliente %></p>
             </div>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
              
@@ -75,7 +90,7 @@
 				</a></li>
 				<li class="nav-item">
                     <a class="nav-link active" href="#" data-bs-toggle="modal" data-bs-target="#modalAlterarSenha">
-                        <span class="icon"><i class="bi bi-lock-fill"></i></span> <span class="txt-link">Alterar Senha</span>
+                        <span class="icon"><i class="bi bi-card-checklist"></i></span> <span class="txt-link">Meus pedidos</span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -161,41 +176,86 @@
 </div>
 
     <div class="modal fade" id="modalAlterarSenha" tabindex="-1" aria-labelledby="modalAlterarSenhaLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modalAlterarSenhaLabel">Alterar Senha</h1>
+                    <h1 class="modal-title fs-5" id="modalAlterarSenhaLabel">Meus Pedidos</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="atualizaSenha" method="post" class="needs-validation" novalidate>
-                        <input type="hidden" name="idCliente" value="<c:out value="${clienteSessao.id}"/>">
-
-                        <div class="mb-3">
-                            <label for="senhaAtual" class="form-label">Senha Atual:</label>
-                            <input type="password" class="form-control" id="senhaAtual" name="senhaAtual" required>
-                            <div class="invalid-feedback">A senha atual é obrigatória.</div>
+ <div class="col-md-12">
+    <div class="table-container">
+        <table class="table table-dark table-striped table-hover">
+            <thead>
+                <tr>
+               
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Observação</th>
+                    <th>Pagamento</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <%if(PedidosCliente != null && ! PedidosCliente.isEmpty()){ 
+                    for(int i = 0 ; i< PedidosCliente.size();i++ ){
+                        String status = PedidosCliente.get(i).getStatus();
+                        String badgeClass = "";
+                        switch(status.toLowerCase()) {
+                            case "entregue":
+                                badgeClass = "bg-success";
+                                break;
+                            case "reprovado":
+                                badgeClass = "bg-danger";
+                                break;
+                            case "pendente":
+                                badgeClass = "bg-warning text-dark";
+                                break;
+                            default:
+                                badgeClass = "bg-secondary";
+                                break;
+                        }
+                %>
+                <tr>
+                 
+                    <td><%=PedidosCliente.get(i).getDataPeedido() %></td>
+                    <td><span class="badge <%= badgeClass %>"><%= status %></span></td>
+                    <td>R$ <%= PedidosCliente.get(i).getTotalPedido() %></td>
+                    <td class="text-truncate" style="max-width: 150px;"><%= PedidosCliente.get(i).getObservacoes() %></td>
+                   <td><%=PedidosCliente.get(i).getFormapagamento() != null && !PedidosCliente.get(i).getFormapagamento().isEmpty()
+		? PedidosCliente.get(i).getFormapagamento()
+		: "-"%></td>
+                    <td>
+                        <div class="d-flex flex-column flex-md-row gap-1">
+                            <button type="button" class="btn btn-sm btn-info visualize-pedido"
+                                data-id-pedido="<%=PedidosCliente.get(i).getIdPedido()%>"
+                                data-bs-toggle="modal" data-bs-target="#gereciarPedido">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                           
                         </div>
-                        <div class="mb-3">
-                            <label for="novaSenha" class="form-label">Nova Senha:</label>
-                            <input type="password" class="form-control" id="novaSenha" name="novaSenha" required>
-                            <div class="invalid-feedback">A nova senha é obrigatória.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="confirmaNovaSenha" class="form-label">Confirmar Nova Senha:</label>
-                            <input type="password" class="form-control" id="confirmaNovaSenha" name="confirmaNovaSenha" required>
-                            <div class="invalid-feedback">A confirmação da senha é obrigatória e deve ser igual à nova senha.</div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                            <button type="submit" class="btn btn-primary">Alterar Senha</button>
-                        </div>
-                    </form>
+                    </td>
+                </tr>
+                <%
+                    }
+                } else{
+                %>
+                <tr>
+                    <td colspan="8" class="text-center">Nenhum pedido realizado ainda.</td>
+                </tr>
+                <%
+                }
+                %>
+            </tbody>
+        </table>
+    </div>
+</div>
+                   
+                   </div>
                 </div>
             </div>
         </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script>

@@ -15,7 +15,7 @@ import DAO.ClientesPedidosDAO;
 import DAO.UsuarioDAO;
 import Model.Clientepedido;
 
-@WebServlet(urlPatterns = {"/clientePedidoServer","/selecionacp"})
+@WebServlet(urlPatterns = {"/clientePedidoServer","/selecionacp","/cadClientePedido"})
 public class clientePedidoServer extends HttpServlet {
     private static final long serialVersionUID = 1L;
        
@@ -30,14 +30,85 @@ public class clientePedidoServer extends HttpServlet {
         
         if(action.equals("/selecionacp")) {
             selecionarCliente(request, response);
-        } else {
+        } else if(action.equals("/cadClientePedido")) {
+        	cadastrarClientePedido(request,response);
+        	
+        }
+        
+        else {
             // Default - mostra a tela de login
             RequestDispatcher rd = request.getRequestDispatcher("LoginPedido.jsp");
             rd.forward(request, response);
         }
     }
 
-    // Método para buscar cliente e retornar JSON para modal
+    private void cadastrarClientePedido(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+
+		String nome = request.getParameter("nome");
+
+		String telefone = request.getParameter("fone");
+
+		String endereco = request.getParameter("endereco");
+
+		String numero = request.getParameter("numero");
+
+		String bairro = request.getParameter("bairro");
+
+		String cidade = request.getParameter("cidade");
+
+		String estado = request.getParameter("estado");
+
+		String email = request.getParameter("email");
+
+		String senha = request.getParameter("senha");
+
+		try {
+
+			Clientepedido cpd = new Clientepedido();
+
+			HttpSession session = request.getSession();
+
+			String empresa = (String) session.getAttribute("empresa");
+
+			ClientesPedidosDAO dao = new ClientesPedidosDAO(empresa);
+
+			cpd.setNome(nome);
+
+			cpd.setEndereco(endereco);
+
+			cpd.setTelefone(telefone);
+
+			cpd.setNumero(Integer.parseInt(numero));
+
+			cpd.setBairro(bairro);
+
+			cpd.setCidade(cidade);
+
+			cpd.setUf(estado);
+
+			cpd.setEmail(email);
+
+			cpd.setSenha(senha);
+
+			dao.Clientepedido(cpd);
+
+			RequestDispatcher rd = request.getRequestDispatcher("LoginPedido.jsp");
+
+			rd.forward(request, response);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+					"Erro ao cadastrar cliente: " + e.getMessage());
+
+		}
+
+	}
+
+	// Método para buscar cliente e retornar JSON para modal
     private void selecionarCliente(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	String idCli = request.getParameter("id");
         if (idCli != null) {
@@ -51,6 +122,8 @@ public class clientePedidoServer extends HttpServlet {
 
                 // Coloca o objeto do cliente na requisição para que a JSP o utilize
                 request.setAttribute("clienteParaModal", cp);
+                session.setAttribute("clienteLogado", cp);
+             
 
                 // Faz o forward para a mesma página que contém o menu e o modal
                 request.getRequestDispatcher("ProdutosPedidos.jsp").forward(request, response);
@@ -112,7 +185,7 @@ public class clientePedidoServer extends HttpServlet {
             if (usuarioID > 0 && clienteCompleto != null) {
                 // SALVAR NA SESSÃO O OBJETO CLIENTE COMPLETO e ID
                 session.setAttribute("clienteLogado", clienteCompleto);
-                session.setAttribute("clienteID", usuarioID);
+                session.setAttribute("usuarioID", usuarioID);
 
                 System.out.println("Usuário logado ID: " + usuarioID);
                 response.sendRedirect("ProdutosPedidos.jsp"); // página após login

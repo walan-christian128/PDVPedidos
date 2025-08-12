@@ -130,7 +130,7 @@ public class ProdutosDAO {
 				obj.setQtd_estoque(rs.getInt("p.qtd_estoque"));
 				obj.setPreco_de_compra(rs.getDouble("p.preco_de_compra"));
 				obj.setPreco_de_venda(rs.getDouble("p.preco_de_venda"));
-				byte[] imagemBytes = rs.getBytes("imagem");
+				byte[] imagemBytes = rs.getBytes("p.imagem");
 				obj.setStatus(rs.getString("p.status"));
 				obj.setImagem(imagemBytes);
 				f.setId(rs.getInt("f.id"));

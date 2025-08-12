@@ -68,12 +68,7 @@ public class PedidosDAO {
             e.printStackTrace(); 
             throw e; 
         } finally {
-            // Mantenha a conexão aberta se outros métodos no mesmo DAO a utilizarem
-            // Se cada método gerencia sua própria conexão, feche-a aqui.
-            // Para um DAO, geralmente a conexão é fechada pelo serviço que o instanciou.
-            // No entanto, para garantir, você pode fechar se tiver certeza que este é o último uso.
-            // Por simplicidade, vou manter a lógica de fechamento no finally de cada método aqui,
-            // mas o ideal é que a conexão seja gerenciada em um nível superior (ex: service layer).
+            
             try {
                 if (con != null && !con.isClosed()) {
                     // con.close(); // Se você quer fechar a conexão após CADA operação
