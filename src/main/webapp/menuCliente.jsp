@@ -1,9 +1,13 @@
 <%@ page import="Model.Clientepedido" %>
+<%@ page import="Model.ItensPedidos" %>
 <%@ page import="DAO.ClientesPedidosDAO" %>
+<%@ page import="DAO.PedidosDAO" %>
+<%@ page import="DAO.ItensPedidoDAO" %>
 <%@ page import="Model.Pedidos" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Base64" %>
+<%@ page import="java.text.NumberFormat, java.util.Locale" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
@@ -26,6 +30,10 @@
     } catch (Exception e) {
 
     }
+    
+   
+   
+    NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
 
 %>
 
@@ -89,7 +97,7 @@
 						class="txt-link">Meus Dados</span>
 				</a></li>
 				<li class="nav-item">
-                    <a class="nav-link active" href="#" data-bs-toggle="modal" data-bs-target="#modalAlterarSenha">
+                    <a class="nav-link active" href="#" data-bs-toggle="modal" data-bs-target="#modalPedidos">
                         <span class="icon"><i class="bi bi-card-checklist"></i></span> <span class="txt-link">Meus pedidos</span>
                     </a>
                 </li>
@@ -112,7 +120,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="atualizaDadosCliente" method="post" class="needs-validation" novalidate>
+                <form action="atualizaDadosCliente" method="get" class="needs-validation" novalidate>
                     <%-- Input para o ID do cliente, usado para identificar qual cliente atualizar --%>
                     <input type="hidden" name="idCliente" id="idClienteInput" value="<%= clienteModal != null ? clienteModal.getId() : "" %>">
 
@@ -161,8 +169,105 @@
                     </div>
                     <div class="mb-3">
                         <label for="estadoCliente" class="form-label">Estado:</label>
-                        <input type="text" class="form-control" id="estadoCliente" name="estadoCliente" placeholder="Ex: MG"
-                               value="<%= clienteModal != null ? clienteModal.getUf() : "" %>">
+                      <select
+						name="estadoCliente" class="form-select" id="estadoCliente">
+						<option value="">Selecione o Estado</option>
+						<option value="AC"
+							<%if ("AC".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Acre</option>
+						<option value="AL"
+							<%if ("AL".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Alagoas</option>
+						<option value="AP"
+							<%if ("AP".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Amapá</option>
+						<option value="AM"
+							<%if ("AM".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Amazonas</option>
+						<option value="BA"
+							<%if ("BA".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Bahia</option>
+						<option value="CE"
+							<%if ("CE".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Ceará</option>
+						<option value="DF"
+							<%if ("DF".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Distrito
+							Federal</option>
+						<option value="ES"
+							<%if ("ES".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Espírito
+							Santo</option>
+						<option value="GO"
+							<%if ("GO".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Goiás</option>
+						<option value="MA"
+							<%if ("MA".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Maranhão</option>
+						<option value="MT"
+							<%if ("MT".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Mato
+							Grosso</option>
+						<option value="MS"
+							<%if ("MS".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Mato
+							Grosso do Sul</option>
+						<option value="MG"
+							<%if ("MG".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Minas
+							Gerais</option>
+						<option value="PA"
+							<%if ("PA".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Pará</option>
+						<option value="PB"
+							<%if ("PB".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Paraíba</option>
+						<option value="PR"
+							<%if ("PR".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Paraná</option>
+						<option value="PE"
+							<%if ("PE".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Pernambuco</option>
+						<option value="PI"
+							<%if ("PI".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Piauí</option>
+						<option value="RJ"
+							<%if ("RJ".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Rio
+							de Janeiro</option>
+						<option value="RN"
+							<%if ("RN".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Rio
+							Grande do Norte</option>
+						<option value="RS"
+							<%if ("RS".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Rio
+							Grande do Sul</option>
+						<option value="RO"
+							<%if ("RO".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Rondônia</option>
+						<option value="RR"
+							<%if ("RR".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Roraima</option>
+						<option value="SC"
+							<%if ("SC".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Santa
+							Catarina</option>
+						<option value="SP"
+							<%if ("SP".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>São
+							Paulo</option>
+						<option value="SE"
+							<%if ("SE".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Sergipe</option>
+						<option value="TO"
+							<%if ("TO".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Tocantins</option>
+						<option value="EX"
+							<%if ("EX".equals(request.getAttribute("estadoCliente")))
+	out.print("selected");%>>Estrangeiro</option>
+					</select>
+
                     </div>
 
                     <div class="d-flex justify-content-end gap-2 mt-3">
@@ -175,7 +280,7 @@
     </div>
 </div>
 
-    <div class="modal fade" id="modalAlterarSenha" tabindex="-1" aria-labelledby="modalAlterarSenhaLabel" aria-hidden="true">
+    <div class="modal fade" id="modalPedidos" tabindex="-1" aria-labelledby="modalAlterarSenhaLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -227,15 +332,14 @@
 		? PedidosCliente.get(i).getFormapagamento()
 		: "-"%></td>
                     <td>
-                        <div class="d-flex flex-column flex-md-row gap-1">
-                            <button type="button" class="btn btn-sm btn-info visualize-pedido"
-                                data-id-pedido="<%=PedidosCliente.get(i).getIdPedido()%>"
-                                data-bs-toggle="modal" data-bs-target="#gereciarPedido">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                           
-                        </div>
-                    </td>
+    <div class="d-flex flex-column flex-md-row gap-1">
+        <a type="button" class="btn btn-sm btn-info visualize-pedido"
+            data-id-pedido="<%=PedidosCliente.get(i).getIdPedido()%>"
+            data-bs-toggle="modal" data-bs-target="#modaldetlhesPedidos">
+            <i class="bi bi-eye"></i>
+        </a>
+    </div>
+</td>
                 </tr>
                 <%
                     }
@@ -256,7 +360,36 @@
                 </div>
             </div>
         </div>
-
+        
+<div class="modal fade" id="modaldetlhesPedidos" tabindex="-1" aria-labelledby="modalAlterarSenhaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalAlterarSenhaLabel">Detalhes Pedido</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="col-md-12">
+                    <div class="table-container">
+                        <table class="table table-dark table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantidade</th>
+                                    <th>Preco Unitario</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script>
         (function () {
@@ -299,6 +432,60 @@
             modal.show();
         <%}%>
     })();
+</script>
+<script>
+    $(document).ready(function() {
+        $('#modalPedidos').on('click', '.visualize-pedido', function(e) {
+            e.preventDefault();
+            
+            var idPedido = $(this).data('id-pedido');
+            
+            $.ajax({
+                url: 'selecionarPedidoCliente',
+                type: 'GET',
+                data: { id: idPedido },
+                dataType: 'json', 
+                success: function(itensPedido) {
+                    var tableBody = $('#modaldetlhesPedidos .modal-body tbody');
+                    tableBody.empty();
+                    
+                    if (itensPedido && itensPedido.length > 0) {
+                        $.each(itensPedido, function(index, item) {
+                            var precoUnitarioFormatado = item.precoUnitario.toFixed(2).replace('.', ',');
+                            var subtotalFormatado = (item.quantidade * item.precoUnitario).toFixed(2).replace('.', ',');
+                            
+                            var row = '<tr>' +
+                                '<td>' + item.produto.descricao + '</td>' +
+                                '<td>' + item.quantidade + '</td>' +
+                                '<td>R$ ' + precoUnitarioFormatado + '</td>' +
+                                '<td>R$ ' + subtotalFormatado + '</td>' +
+                            '</tr>';
+                            tableBody.append(row);
+                        });
+                    } else {
+                        var noDataRow = '<tr>' +
+                            '<td colspan="4" class="text-center">Nenhum detalhe de pedido encontrado.</td>' +
+                        '</tr>';
+                        tableBody.append(noDataRow);
+                    }
+                    
+                    $('#modalPedidos').modal('hide');
+                    setTimeout(function() {
+                        $('#modaldetlhesPedidos').modal('show');
+                    }, 400);
+                },
+                error: function(xhr) {
+                    var errorMessage = 'Erro ao carregar os detalhes do pedido.';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    } else {
+                        errorMessage = xhr.responseText;
+                    }
+                    alert(errorMessage);
+                }
+            });
+        });
+    });
 </script>
 </body>
 </html>

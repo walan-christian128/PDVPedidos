@@ -307,10 +307,7 @@ public class produtosServer extends HttpServlet {
 			
 			response.sendRedirect("Produtos.jsp");
 			
-			System.out.println("Produto a ser atualizado:");
-			System.out.println("ID: " + prod.getId());
-			System.out.println("Descrição: " + prod.getDescricao());
-			System.out.println("Qtd Estoque: " + prod.getQtd_estoque());
+			
 		} catch (NumberFormatException e) {
 			// Lide com o caso em que há um problema de formato numérico
 

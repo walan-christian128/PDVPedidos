@@ -1,5 +1,12 @@
 package Controller;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.Message.RecipientType;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,12 +17,13 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Properties;
 
 import DAO.ClientesPedidosDAO;
 import DAO.UsuarioDAO;
 import Model.Clientepedido;
 
-@WebServlet(urlPatterns = {"/clientePedidoServer","/selecionacp","/cadClientePedido"})
+@WebServlet(urlPatterns = {"/clientePedidoServer","/selecionacp","/cadClientePedido","/atualizaDadosCliente","/Recuperarsenhacliente"})
 public class clientePedidoServer extends HttpServlet {
     private static final long serialVersionUID = 1L;
        
@@ -33,6 +41,12 @@ public class clientePedidoServer extends HttpServlet {
         } else if(action.equals("/cadClientePedido")) {
         	cadastrarClientePedido(request,response);
         	
+        }else if(action.equals("/atualizaDadosCliente")) {
+        	alteraCliente(request,response);
+        	
+        }else if(action.equals("/Recuperarsenhacliente")) {
+        	enviarEmailSenha(request,response);
+        	
         }
         
         else {
@@ -42,7 +56,147 @@ public class clientePedidoServer extends HttpServlet {
         }
     }
 
-    private void cadastrarClientePedido(HttpServletRequest request, HttpServletResponse response)
+    private void enviarEmailSenha(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    	String email = request.getParameter("email");
+		String empresa = request.getParameter("empresa");
+
+		try {
+			// Verifica se o email existe no banco de dados
+			ClientesPedidosDAO cliDAO = new ClientesPedidosDAO(empresa);
+			boolean emailExiste = cliDAO.enviarEmailCliente(email);
+
+			if (emailExiste) {
+				// Enviar OTP por e-mail
+				String to = email;
+				String resetLink = "http://192.168.1.2:8080/PDV/RedefinirSenha.jsp"; // Gera o
+																												// OTP
+																												// aqui
+
+				// Configurações do servidor de e-mail
+				Properties props = new Properties();
+				props.put("mail.smtp.host", "smtp.gmail.com");
+				props.put("mail.smtp.port", "587");
+				props.put("mail.smtp.auth", "true");
+				props.put("mail.smtp.starttls.enable", "true");
+
+				// Autenticação para envio de e-mail
+				Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
+					@Override
+					protected PasswordAuthentication getPasswordAuthentication() {
+						return new PasswordAuthentication("wttech.tech@gmail.com", "mnpu lbua cxxm bgpk"); // Use o
+																												// seu
+																												// e-mail
+																												// e
+																												// senha
+					}
+				});
+
+				try {
+					// Criando a mensagem de e-mail
+					MimeMessage message = new MimeMessage(session);
+					message.setFrom(new InternetAddress("wttech.tech@gmail.com")); // E-mail do remetente
+					message.addRecipient(RecipientType.TO, new InternetAddress(to)); // E-mail do
+																									// destinatário
+					message.setSubject("Recuperação de Senha");
+					message.setText("Click no link para redefinição de senha: " + resetLink);
+
+					// Enviando o e-mail
+					Transport.send(message);
+					System.out.println("E-mail enviado com sucesso");
+
+					// Define a mensagem de sucesso na requisição
+					request.setAttribute("ok", "Email enviado com sucesso confira sua caixa de entrada ou spam.");
+
+					// Encaminha a requisição para o JSP
+					RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
+					rd.forward(request, response);
+
+				} catch (MessagingException e) {
+					e.printStackTrace();
+					request.setAttribute("erro", "Falha ao enviar o e-mail.");
+					RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
+					rd.forward(request, response);
+				}
+
+			} else {
+				// Caso o e-mail ou a empresa estejam incorretos
+				request.setAttribute("erro", "Email ou empresa incorretos.");
+				RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
+				rd.forward(request, response);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			request.setAttribute("erro", "Ocorreu um erro ao processar a solicitação.");
+			RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
+			rd.forward(request, response);
+		}
+    }
+	private void alteraCliente(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		String empresa = (String) session.getAttribute("empresa");
+
+		String nomecli = request.getParameter("nomeCliente");
+		String enderecocli = request.getParameter("ruaCliente");
+		String telefonecli = request.getParameter("telefoneCliente");
+		String emailcli = request.getParameter("emailCliente");
+		String numerocli = request.getParameter("numeroCliente");
+		String bairrocli = request.getParameter("bairroCliente");
+		String cidadecli = request.getParameter("cidadeCliente");
+		String estadocli = request.getParameter("estadoCliente");
+		String idcli = request.getParameter("idCliente");
+
+		Clientepedido cliPed = new Clientepedido();
+
+		try {
+			if (nomecli != null && !nomecli.isEmpty()) {
+				cliPed.setNome(nomecli);
+			}
+			if (enderecocli != null && !enderecocli.isEmpty()) {
+				cliPed.setEndereco(enderecocli);
+			}
+			if (telefonecli != null && !telefonecli.isEmpty()) {
+				cliPed.setCelular(telefonecli);
+			}
+			if (emailcli != null && !emailcli.isEmpty()) {
+				cliPed.setEmail(emailcli);
+			}
+			if (numerocli != null && !numerocli.isEmpty()) {
+
+				int cliNumero = Integer.parseInt(numerocli);
+				cliPed.setNumero(cliNumero);
+
+			}
+			if (bairrocli != null && !bairrocli.isEmpty()) {
+				cliPed.setBairro(bairrocli);
+			}
+			if (estadocli != null && !estadocli.isEmpty()) {
+				request.setAttribute("estadoCliente", cliPed.getUf());
+				cliPed.setUf(estadocli);
+			}
+			if (cidadecli != null && !cidadecli.isEmpty()) {
+				cliPed.setCidade(cidadecli);
+			}
+			if (idcli != null && !idcli.isEmpty()) {
+
+				int cliid = Integer.parseInt(idcli);
+				cliPed.setId(cliid);
+			}
+			
+			ClientesPedidosDAO daoped = new ClientesPedidosDAO(empresa);
+			daoped.alteraClientePedido(cliPed);
+			
+			RequestDispatcher rd = request.getRequestDispatcher("ProdutosPedidos.jsp");
+			rd.forward(request, response);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		
+		
+		
+	}
+
+	private void cadastrarClientePedido(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
 		String nome = request.getParameter("nome");
@@ -122,7 +276,9 @@ public class clientePedidoServer extends HttpServlet {
 
                 // Coloca o objeto do cliente na requisição para que a JSP o utilize
                 request.setAttribute("clienteParaModal", cp);
+                request.setAttribute("estadoCliente", cp.getUf());
                 session.setAttribute("clienteLogado", cp);
+                
              
 
                 // Faz o forward para a mesma página que contém o menu e o modal
@@ -145,7 +301,7 @@ public class clientePedidoServer extends HttpServlet {
         
         String email = request.getParameter("emailpedido");
         String senha = request.getParameter("senhapedido");
-        String empresa = request.getParameter("empresapedido");
+        String empresa = request.getParameter("empresa");
         
         // Pega empresa da sessão se não veio do formulário
         if (empresa == null) {

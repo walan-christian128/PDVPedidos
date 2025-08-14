@@ -6,11 +6,22 @@
 <%
 String erro = (String) request.getAttribute("erro");
 
-String empresa = request.getParameter("empresapedido");
-if (empresa != null) {
-    session.setAttribute("empresapedido", empresa);
+String empresa = request.getParameter("empresa");
+
+if (empresa != null && !empresa.isEmpty()) {
+    // Se a empresa foi passada por parâmetro, salve na sessão
+    session.setAttribute("empresa", empresa);
 } else {
-    empresa = (String) session.getAttribute("empresapedido"); // recupera caso seja recarregada
+    // Se não foi passada, tente recuperar da sessão
+    empresa = (String) session.getAttribute("empresa");
+    
+    // Se a empresa ainda for nula, redirecione o usuário para uma página de erro ou de escolha de empresa
+    if (empresa == null) {
+        // Redirecionamento para evitar erros.
+        // Substitua "pagina_inicial_de_login.jsp" pela sua página inicial.
+        response.sendRedirect("ProdutosPedidos.jsp");
+        return; // É crucial parar a execução da JSP
+    }
 }
 
 
@@ -128,7 +139,7 @@ if (empresa != null) {
 
 						</div>
 
-						<a href="RecuperarSenha.jsp" class="ls-login-forgot">Esqueci minha senha</a>
+						<a href="RecuperarSenhaCliente.jsp?empresapedido=<%= empresa %>" class="ls-login-forgot">Esqueci minha senha</a>
 
                        
 

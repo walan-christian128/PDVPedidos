@@ -27,6 +27,25 @@ public class ClientesPedidosDAO {
 	        } catch (SQLException e) {
 	            e.printStackTrace(); // Trate a exceção conforme necessário
 	        }
+	        
+	    }
+	    public boolean enviarEmailCliente(String email) {
+	        String sql = "select * from tb_cliente_pedido where email = ?";
+	        boolean clienteEmail = false;
+
+	        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+	            // Define o parâmetro **antes** de executar a consulta
+	            stmt.setString(1, email);
+	            
+	            try (ResultSet rs = stmt.executeQuery()) {
+	                if (rs.next()) {
+	                    clienteEmail = true;
+	                }
+	            }
+	        } catch (Exception e) {
+	            e.printStackTrace(); // É fundamental para depurar
+	        }
+	        return clienteEmail;
 	    }
 	   
 	    public void Clientepedido(Clientepedido obj) {
@@ -122,6 +141,33 @@ public List<Pedidos> pedidosCliente(int codigo) {
     }
 
     return lista;
+}
+public void alteraClientePedido(Clientepedido obj) {
+	
+	String sql = " update tb_cliente_pedido set nome=?,telefone=?,endereco=?,numero=?,bairro=?,cidade=?,estado=?,email=? where id = ? " ;
+	
+	try {
+		PreparedStatement stmt = con.prepareStatement(sql);
+		stmt.setString(1, obj.getNome());
+		stmt.setString(2, obj.getCelular());
+		stmt.setString(3, obj.getEndereco());
+		stmt.setInt(4, obj.getNumero());
+		stmt.setString(5, obj.getBairro());
+		stmt.setString(6, obj.getCidade());
+		stmt.setString(7, obj.getUf());
+		stmt.setString(8, obj.getEmail());
+		stmt.setInt(9, obj.getId());
+		
+		stmt.executeUpdate();
+		stmt.close();
+		
+		
+	} catch (Exception e) {
+		// TODO: handle exception
+	}
+
+	
+	
 }
 
 }

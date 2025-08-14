@@ -1,5 +1,27 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="DAO.TokenServiceDAO" %> <%-- Mantenha se você realmente usar TokenServiceDAO aqui --%>
+<%
+String erro = (String) request.getAttribute("erro");
+
+//⚠️ CORREÇÃO: Recuperar o valor do parâmetro "empresapedido"
+String empresa = request.getParameter("empresa");
+
+if (empresa != null && !empresa.isEmpty() && !"null".equals(empresa)) {
+ // Se a empresa foi passada por parâmetro, salve na sessão
+ session.setAttribute("empresa", empresa);
+} else {
+ // Se não foi passada, tente recuperar da sessão
+ empresa = (String) session.getAttribute("empresa");
+ 
+ // Se a empresa ainda for nula, redirecione o usuário para a página de login
+ if (empresa == null || empresa.isEmpty() || "null".equals(empresa)) {
+     // Redireciona para a página de login.
+     response.sendRedirect("LoginPedido.jsp");
+     return; // É crucial parar a execução da JSP
+ }
+}
+%>
+
 
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -96,7 +118,7 @@
 
         <form action="cadClientePedido" method="get" id="cadastroForm"> <%-- Alterado para method="post" para segurança --%>
             <h5 class="text-center mb-4 text-secondary">Preencha com suas informações</h5>
-
+            <input type="hidden" name="empresapedido" value="<%= empresa %>">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="nome" class="form-label">Nome Completo:</label>
