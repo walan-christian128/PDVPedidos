@@ -29,6 +29,28 @@ public class ClientesPedidosDAO {
 	        }
 	        
 	    }
+	    
+	    public boolean alteraSenha(String senha, String email) {
+	        String senhaHashed = PasswordUtil.hashPassword(senha);
+	        String sql = "UPDATE tb_cliente_pedido SET senha = ? WHERE email = ?";
+
+	        // Usando try-with-resources para garantir que o PreparedStatement seja fechado automaticamente
+	        try (PreparedStatement stmt = con.prepareStatement(sql)) {
+	            stmt.setString(1, senhaHashed);
+	            stmt.setString(2, email);
+
+	            // executeUpdate() retorna o número de linhas afetadas.
+	            int linhasAfetadas = stmt.executeUpdate();
+
+	            // Se o número de linhas afetadas for maior que 0, a alteração foi bem-sucedida.
+	            return linhasAfetadas > 0;
+
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            // Se ocorrer uma exceção, a operação falhou.
+	            return false;
+	        }
+	    }
 	    public boolean enviarEmailCliente(String email) {
 	        String sql = "select * from tb_cliente_pedido where email = ?";
 	        boolean clienteEmail = false;

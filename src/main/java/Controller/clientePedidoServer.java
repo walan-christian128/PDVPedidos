@@ -23,7 +23,7 @@ import DAO.ClientesPedidosDAO;
 import DAO.UsuarioDAO;
 import Model.Clientepedido;
 
-@WebServlet(urlPatterns = {"/clientePedidoServer","/selecionacp","/cadClientePedido","/atualizaDadosCliente","/Recuperarsenhacliente"})
+@WebServlet(urlPatterns = {"/clientePedidoServer","/selecionacp","/cadClientePedido","/atualizaDadosCliente","/Recuperarsenhacliente","/alteraSenha"})
 public class clientePedidoServer extends HttpServlet {
     private static final long serialVersionUID = 1L;
        
@@ -48,6 +48,10 @@ public class clientePedidoServer extends HttpServlet {
         	enviarEmailSenha(request,response);
         	
         }
+        else if(action.equals("/alteraSenha")) {
+        	alterarsenha(request,response);
+        	
+        }
         
         else {
             // Default - mostra a tela de login
@@ -56,82 +60,130 @@ public class clientePedidoServer extends HttpServlet {
         }
     }
 
-    private void enviarEmailSenha(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    private void alterarsenha(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException  {
+        String novaSenha = request.getParameter("novaSenha");
+        String email = request.getParameter("email");
+        String empresa = request.getParameter("empresa");
+
+        if (novaSenha == null || novaSenha.trim().isEmpty() || email == null || email.trim().isEmpty() || empresa == null || empresa.trim().isEmpty()) {
+            request.setAttribute("erro", "Dados inválidos. Por favor, preencha todos os campos.");
+            RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaAtualiza.jsp");
+            rd.forward(request, response);
+            return;
+        }
+
+        try {
+            ClientesPedidosDAO cliDAO = new ClientesPedidosDAO(empresa);
+            
+            // Chama o método do DAO e verifica o resultado
+            boolean senhaAlteradaComSucesso = cliDAO.alteraSenha(novaSenha, email);
+            
+            if (senhaAlteradaComSucesso) {
+                // Sucesso! Redireciona para a página de login.
+                request.setAttribute("ok", "Sua senha foi alterada com sucesso! Você já pode fazer login.");
+                response.sendRedirect("LoginPedido.jsp?sucesso=Sua senha foi alterada com sucesso! Você já pode fazer login.");
+            } else {
+                // Falha! O e-mail não foi encontrado na tabela ou houve outro problema.
+                request.setAttribute("erro", "Não foi possível redefinir a senha. Verifique se o link está correto.");
+                RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaAtualiza.jsp");
+                rd.forward(request, response);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Erro genérico
+            request.setAttribute("erro", "Ocorreu um erro ao redefinir a senha. Tente novamente mais tarde.");
+            RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaAtualiza.jsp");
+            rd.forward(request, response);
+        }
+    }
+
+	private void enviarEmailSenha(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     	String email = request.getParameter("email");
 		String empresa = request.getParameter("empresa");
 
 		try {
-			// Verifica se o email existe no banco de dados
+			// **1. Verificação do e-mail no banco de dados**
+			// A classe ClientesPedidosDAO deve ser configurada para se comunicar com o seu banco de dados
+			// e ter um método para verificar a existência do e-mail.
 			ClientesPedidosDAO cliDAO = new ClientesPedidosDAO(empresa);
 			boolean emailExiste = cliDAO.enviarEmailCliente(email);
 
 			if (emailExiste) {
-				// Enviar OTP por e-mail
-				String to = email;
-				String resetLink = "http://192.168.1.2:8080/PDV/RedefinirSenha.jsp"; // Gera o
-																												// OTP
-																												// aqui
+				// **2. Configuração e envio do e-mail**
+				// Onde você define a URL de redefinição de senha
+				String resetLink = "http://localhost:8080/PDVVenda/RecuperarSenhaAtualiza.jsp?email=" + email + "&empresa=" + empresa;
 
-				// Configurações do servidor de e-mail
 				Properties props = new Properties();
 				props.put("mail.smtp.host", "smtp.gmail.com");
 				props.put("mail.smtp.port", "587");
 				props.put("mail.smtp.auth", "true");
 				props.put("mail.smtp.starttls.enable", "true");
 
-				// Autenticação para envio de e-mail
 				Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
 					@Override
 					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication("wttech.tech@gmail.com", "mnpu lbua cxxm bgpk"); // Use o
-																												// seu
-																												// e-mail
-																												// e
-																												// senha
+						// Utilize sua senha de app do Gmail aqui
+						return new PasswordAuthentication("wttech.tech@gmail.com", "mnpu lbua cxxm bgpk");
 					}
 				});
 
 				try {
-					// Criando a mensagem de e-mail
 					MimeMessage message = new MimeMessage(session);
-					message.setFrom(new InternetAddress("wttech.tech@gmail.com")); // E-mail do remetente
-					message.addRecipient(RecipientType.TO, new InternetAddress(to)); // E-mail do
-																									// destinatário
+					message.setFrom(new InternetAddress("wttech.tech@gmail.com"));
+					message.addRecipient(RecipientType.TO, new InternetAddress(email));
 					message.setSubject("Recuperação de Senha");
-					message.setText("Click no link para redefinição de senha: " + resetLink);
 
-					// Enviando o e-mail
+					// Conteúdo do e-mail em HTML
+					String htmlContent = "<html>"
+										+ "<body>"
+										+ "<div style='font-family: Arial, sans-serif; color: #333;'>"
+										+ "<h2>Recuperação de Senha</h2>"
+										+ "<p>Olá,</p>"
+										+ "<p>Recebemos uma solicitação para redefinir sua senha. Para continuar com o processo, clique no botão abaixo:</p>"
+										+ "<p style='margin: 20px 0;'>"
+										+ "<a href='" + resetLink + "' style='background-color: #007bff; color: white; padding: 12px 24px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; font-weight: bold;'>Redefinir Senha</a>"
+										+ "</p>"
+										+ "<p>Se você não solicitou a redefinição de senha, por favor, ignore este e-mail.</p>"
+										+ "<p>Atenciosamente,<br>WTTECH</p>"
+										+ "</div>"
+										+ "</body>"
+										+ "</html>";
+
+					// Define o conteúdo da mensagem como HTML
+					message.setContent(htmlContent, "text/html; charset=utf-8");
+
 					Transport.send(message);
-					System.out.println("E-mail enviado com sucesso");
+					System.out.println("E-mail enviado com sucesso para: " + email);
 
-					// Define a mensagem de sucesso na requisição
-					request.setAttribute("ok", "Email enviado com sucesso confira sua caixa de entrada ou spam.");
-
-					// Encaminha a requisição para o JSP
+					// Define a mensagem de sucesso e redireciona
+					request.setAttribute("ok", "Email enviado com sucesso! Confira sua caixa de entrada ou spam.");
 					RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
 					rd.forward(request, response);
 
 				} catch (MessagingException e) {
 					e.printStackTrace();
-					request.setAttribute("erro", "Falha ao enviar o e-mail.");
+					request.setAttribute("erro", "Falha ao enviar o e-mail. Tente novamente mais tarde.");
 					RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
 					rd.forward(request, response);
 				}
 
 			} else {
-				// Caso o e-mail ou a empresa estejam incorretos
-				request.setAttribute("erro", "Email ou empresa incorretos.");
+				// **3. Erro: e-mail não encontrado**
+				request.setAttribute("erro", "Email ou empresa incorretos. Por favor, verifique os dados.");
 				RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
 				rd.forward(request, response);
 			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			request.setAttribute("erro", "Ocorreu um erro ao processar a solicitação.");
+			request.setAttribute("erro", "Ocorreu um erro interno ao processar a solicitação.");
 			RequestDispatcher rd = request.getRequestDispatcher("RecuperarSenhaCliente.jsp");
 			rd.forward(request, response);
 		}
-    }
+	}
+    
+    
 	private void alteraCliente(HttpServletRequest request, HttpServletResponse response)throws ServletException, IOException {
 		HttpSession session = request.getSession();
 		String empresa = (String) session.getAttribute("empresa");
