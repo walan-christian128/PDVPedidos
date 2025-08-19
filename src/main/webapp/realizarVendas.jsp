@@ -22,6 +22,15 @@ if (empresa == null || empresa.isEmpty()) {
 	rd.forward(request, response);
 	return; // Certifique-se de que o código pare de executar após o redirecionamento
 }
+
+if (session.getAttribute("empresaId") == null) {
+    String empresaIdStr = request.getParameter("empresaId");
+    if (empresaIdStr != null && !empresaIdStr.isEmpty()) {
+        session.setAttribute("empresaId", Integer.parseInt(empresaIdStr));
+    }
+}
+Integer empresaId = (Integer) session.getAttribute("empresaId");
+
 %>
 <%
 Date agora = new Date();
@@ -276,104 +285,105 @@ VendasDAO dao = new VendasDAO(empresa);
 			</div>
 
 		</div>
-		<form action="InseirVendaEintens" id="modalVendas" method="get">
-			<div class="modal fade" tabindex="-1" id="confirmacaoModal">
-				<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title">Pagamento</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal"
-								aria-label="Close"></button>
-						</div>
-						<div class="modal-body">
-							<div>
-
-								<select class="form-select" name=formaPagamento
-									id="formaPagamento">
-									<option value="">Selecione a Opçao de pagamento</option>
-									<option value="Dinheiro">Dinheiro</option>
-									<option value="Crédito">Crédito</option>
-									<option value="Débito">Débito</option>
-									<option value="Pix">Pix</option>
-									<option value="Anotado">Anotado</option>
-
-								</select>
-								<div class=" col-md-3">
-									<label class="form-label">Valor: </label> <input type="text"
-										class="form-control ml-1" id="pegardoTotal"
-										value="<%=session.getAttribute("totalVendaAtualizado")%>"
-										name="iserirtotal">
-
-								</div>
-								<div class="col-md-3" id="dinheiroRecebidoDiv">
-									<label class="form-label">Dinheiro recebido: </label> <input
-										type="text" class="form-control ml-1" id="dinheiroRecebido">
-
-								</div>
-								<div class="col-md-3" id="trocoDiv">
-									<label class="form-label"> Troco: </label> <input type="text"
-										class="form-control" id="trocoVenda" value="0.00"> <input
-										type="button" class="btn btn-success" value="Confimar Troco"
-										style="margin-top: 10px;" id="btn-troco">
-
-								</div>
-
-								<div class="col-md-6" id="observacaoDiv">
-									<label class="form-label"> Observação: </label> <input
-										type="text" class="form-control" id="observacao"
-										name="observacao">
-
-
-								</div>
-							</div>
-
-						</div>
-						<div class="modal-footer">
-							<h4 class="display-7">Deseja finalizar a venda ?</h4>
-							<button type="button" class="btn btn-secondary"
-								data-bs-dismiss="modal">Não</button>
-							<a type="submit" class="btn btn-primary" 
-				             onclick="submitFormAndShowModal()" id="rel" href="relatorioVenda.jsp" target="_blank" >Sim</a>
-
-						</div>
-
-					</div>
+<form action="InseirVendaEintens" id="modalVendas" method="get">
+	<div class="modal fade" tabindex="-1" id="confirmacaoModal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Pagamento</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"
+						aria-label="Close"></button>
 				</div>
+				<div class="modal-body">
+					<div>
+
+						<!-- O VALOR DA OPÇÃO 'PIX' FOI ALTERADO PARA 'MERCADOPAGO' -->
+						<select class="form-select" name="formaPagamento" id="formaPagamento">
+							<option value="">Selecione a Opçao de pagamento</option>
+							<option value="Dinheiro">Dinheiro</option>
+							<option value="Crédito">Crédito</option>
+							<option value="Débito">Débito</option>
+							<option value="MERCADOPAGO">Mercado Pago (Pix, Crédito, etc.)</option>
+							<option value="Anotado">Anotado</option>
+						</select>
+
+								
+
+								<div class="col-md-3">
+							<label class="form-label">Valor: </label> <input type="text"
+								class="form-control ml-1" id="pegardoTotal"
+								value="<%=session.getAttribute("totalVendaAtualizado")%>"
+								name="iserirtotal">
+						</div>
+						
+						
+						<div class="col-md-3" id="dinheiroRecebidoDiv">
+							<label class="form-label">Dinheiro recebido: </label> <input
+								type="text" class="form-control ml-1" id="dinheiroRecebido">
+						</div>
+						
+						<div class="col-md-3" id="trocoDiv">
+							<label class="form-label"> Troco: </label> <input type="text"
+								class="form-control" id="trocoVenda" value="0.00"> <input
+								type="button" class="btn btn-success" value="Confimar Troco"
+								style="margin-top: 10px;" id="btn-troco">
+						</div>
+
+						<div class="col-md-6" id="observacaoDiv">
+							<label class="form-label"> Observação: </label> <input
+								type="text" class="form-control" id="observacao"
+								name="observacao">
+						</div>
+					</div>
+
+				</div>
+				<div class="modal-footer">
+					<h4 class="display-7">Deseja finalizar a venda ?</h4>
+					<button type="button" class="btn btn-secondary"
+						data-bs-dismiss="modal">Não</button>
+					
+					<!-- O BOTÃO DE SUBMISSÃO FOI ALTERADO PARA UM TIPO "submit" ADEQUADO -->
+					<button type="submit" class="btn btn-primary">Sim</button>
+				</div>
+
 			</div>
-			<input type="hidden" name="cliId"
-				value="<%=request.getAttribute("cliId")%>"> <input
-				type="hidden" name="data" value="<%=datamysql%>">  <input
-				type="hidden" class="form-control" name="desconto"
-				value="<%=request.getAttribute("desconto") != null ? request.getAttribute("desconto").toString() : "0.00"%>"
-				id="desconto">
-				<input type="hidden" name="usuarioID">
-				
-				
-			<%
-			if (itensArray != null) {
-				for (int i = 0; i < itensArray.length(); i++) {
-					JSONObject itemJson_3 = itensArray.getJSONObject(i);
-			%>
-			<input type="hidden" name="idProd" id="idProd"
-				value="<%=itemJson_3.getString("idProd")%>"> <input
-				type="hidden" name="qtdProd" id="qtdProd"
-				value="<%=itemJson_3.getString("qtdProd")%>"> <input
-				type="hidden" name="subtotal" id="subtotal"
-				value="<%=itemJson_3.getString("subtotal")%>">
-			<%
-			}
-			}
-			%>
-			
+		</div>
+	</div>
+	
+	<!-- CAMPOS OCULTOS FORAM ORGANIZADOS E DUPLICAÇÕES REMOVIDAS -->
+	<input type="hidden" name="cliId" value="${cliente.id}">
+	<input type="hidden" name="observacao" value="Observação da venda">
+	
+	<!-- CORRIGIDO: FORMATANDO A DATA PARA O PADRÃO YYYY-MM-DD HH:MM:SS -->
+	<input type="hidden" name="data" value="<%= new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date()) %>">
+	
+	<input type="hidden" name="desconto"
+		value="<%=request.getAttribute("desconto") != null ? request.getAttribute("desconto").toString() : "0.00"%>"
+		id="desconto">
+
+	<!-- OS CAMPOS ABAIXO JÁ ESTÃO NO FORMULÁRIO. REMOVA AS DUPLICAÇÕES SE NECESSÁRIO -->
+	<input type="hidden" name="usuarioID">
+	<input type="hidden" name="empresaId" value="${empresa}">
 
 
-			
-		
-			
 
+	<%
+	if (itensArray != null) {
+		for (int i = 0; i < itensArray.length(); i++) {
+			JSONObject itemJson_3 = itensArray.getJSONObject(i);
+	%>
+	<input type="hidden" name="idProd" id="idProd"
+		value="<%=itemJson_3.getString("idProd")%>"> <input
+		type="hidden" name="qtdProd" id="qtdProd"
+		value="<%=itemJson_3.getString("qtdProd")%>"> <input
+		type="hidden" name="subtotal" id="subtotal"
+		value="<%=itemJson_3.getString("subtotal")%>">
+	<%
+	}
+	}
+	%>
 
-		</form>
-		
+</form>
 		      <!-- Modal para o relatório -->
 		<div class="modal fade" tabindex="-1" id="comprovanteVenda"
 			data-bs-backdrop="static" data-bs-keyboard="false">

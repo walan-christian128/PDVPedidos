@@ -34,63 +34,51 @@ public class VendasDAO {
 	    }
 	// Cadastrar Venda//
 
-	public void cadastrarVenda(Vendas obj) {
-		try {
+	 public void cadastrarVenda(Vendas obj) throws SQLException {
+	        String sql = "insert into tb_vendas(cliente_id,data_venda,total_venda,observacoes,desconto,forma_pagamento,idUsuario)values(?,?,?,?,?,?,?)";
+	        PreparedStatement stmt = null;
+	        try {
+	            stmt = con.prepareStatement(sql);
 
+	            if (obj.getCliente() != null) {
+	                // Define o cliente_id normalmente
+	                stmt.setInt(1, obj.getCliente().getId());
+	            } else {
+	                // Define NULL para cliente_id se não houver cliente
+	                stmt.setNull(1, java.sql.Types.INTEGER);
+	            }
+	            stmt.setString(2, obj.getData_venda());
+	            stmt.setDouble(3, obj.getTotal_venda());
+	            stmt.setString(4, obj.getObs());
+	            stmt.setDouble(5, obj.getDesconto());
+	            stmt.setString(6, obj.getFormaPagamento());
+	            stmt.setInt(7, obj.getUsuario().getId());
 
-			String sql = "insert into tb_vendas(cliente_id,data_venda,total_venda,observacoes,desconto,forma_pagamento,idUsuario)values(?,?,?,?,?,?,?)";
-			PreparedStatement stmt = con.prepareStatement(sql);
-
-			if (obj.getCliente() !=null ) {
-				// Define o cliente_id normalmente
-				stmt.setInt(1, obj.getCliente().getId());
-
-			} else {
-				// Define NULL para cliente_id se não houver cliente
-				stmt.setNull(1, java.sql.Types.INTEGER);
-
-			}
-			stmt.setString(2, obj.getData_venda());
-			stmt.setDouble(3, obj.getTotal_venda());
-			stmt.setString(4, obj.getObs());
-			stmt.setDouble(5, obj.getDesconto());
-			stmt.setString(6, obj.getformaPagamento());
-			stmt.setInt(7, obj.getUsuario().getId());
-
-			stmt.execute();
-
-			stmt.close();
-
-		} catch (SQLException erro) {
-
-		}
-
-	}
+	            stmt.execute();
+	        } finally {
+	            if (stmt != null) {
+	                stmt.close();
+	            }
+	        }
+	    }
 	// Retorna a Ultima venda//
 
-	public int retornaUltimaVenda() {
+	 public int retornaUltimaVenda() throws SQLException {
+	        try {
+	            int idvenda = 0;
+	            String sql = "select max(id)id from tb_vendas";
+	            PreparedStatement ps = con.prepareStatement(sql);
+	            ResultSet rs = ps.executeQuery();
 
-		try {
-			int idvenda = 0;
-
-			String sql = "select max(id)id from tb_vendas";
-			PreparedStatement ps = con.prepareStatement(sql);
-
-			ResultSet rs = ps.executeQuery();
-
-			if (rs.next()) {
-				Vendas p = new Vendas();
-				p.setId(rs.getInt("id"));
-
-				idvenda = p.getId();
-
-			}
-			return idvenda;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-
-	}
+	            if (rs.next()) {
+	                idvenda = rs.getInt("id");
+	            }
+	            return idvenda;
+	        } catch (Exception e) {
+	            throw new RuntimeException(e);
+	        }
+	    }
+	
 
 	// Metodo que filtra venda por datas //
 	public List<Vendas> listarVendasPorPeriodo(LocalDate data_inicio, LocalDate data_fim) {

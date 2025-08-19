@@ -7,10 +7,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,13 +25,22 @@ import javax.naming.NamingException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.mercadopago.MercadoPagoConfig;
+import com.mercadopago.client.preference.PreferenceClient;
+import com.mercadopago.client.preference.PreferenceItemRequest;
+import com.mercadopago.client.preference.PreferenceRequest;
+import com.mercadopago.resources.preference.Preference;
+
 import Conexao.ConectionFactory;
 import DAO.ClientesDAO;
+import DAO.ConfigPagamentoDAO;
+import DAO.EmpresaDAO;
 import DAO.ProdutosDAO;
 import DAO.UsuarioDAO;
 import DAO.VendasDAO;
 import DAO.itensVendaDAO;
 import Model.Clientes;
+import Model.ConfigPagamento;
 import Model.Empresa;
 import Model.ItensVenda;
 import Model.Produtos;
@@ -456,6 +468,7 @@ public class vendasServer extends HttpServlet {
 
 		HttpSession session = request.getSession();
 		String empresa = (String) session.getAttribute("empresa");
+		
 
 		try {
 			SimpleDateFormat dataVenda = new SimpleDateFormat("dd/MM/yyyy");
@@ -511,113 +524,164 @@ public class vendasServer extends HttpServlet {
 	        throws ServletException, IOException {
 
 	    HttpSession session = request.getSession();
-	    String empresa = (String) session.getAttribute("empresa");
-
-	    String idCli = request.getParameter("cliId");
-	    String dataVenda = request.getParameter("data");
-	    String totalVenda = request.getParameter("iserirtotal");
-	    String Obs = request.getParameter("observacao");
-	    String desconto = request.getParameter("desconto");
-	    String formaPagamento = request.getParameter("formaPagamento");
-
-	    // Pegando o ID do usuário logado da sessão
-	    Integer usuarioID = (Integer) session.getAttribute("usuarioID");
-
-	    Vendas obj = new Vendas();
+	    Connection con = (Connection) request.getServletContext().getAttribute("conexao");
 
 	    try {
-	        if (idCli != null && !idCli.isEmpty() && !idCli.equals("0")) {
-	            Clientes objCli = new Clientes();
-	            objCli.setId(Integer.parseInt(idCli));
-	            obj.setCliente(objCli);
-	        } else {
-	            obj.setCliente(null);
+	        // 🔹 Nome da base de dados (para todos os DAOs)
+	        String empresaBase = (String) session.getAttribute("empresa"); // ex: "distribuidora"
+	        if (empresaBase == null || empresaBase.isEmpty()) {
+	            System.err.println("Erro: Nome da base da empresa não definido na sessão.");
+	            response.sendRedirect("erroPagamento.jsp?msg=empresa-base-nao-definida");
+	            return;
 	        }
 
-	        // Definindo os outros campos da venda
-	        obj.setData_venda(dataVenda);
-	        obj.setTotal_venda(Double.parseDouble(totalVenda));
-	        obj.setObs(Obs);
-	        obj.setDesconto(Double.parseDouble(desconto));
+	        // 🔹 Nome da empresa real (pode vir do formulário ou fallback)
+	        String empresaNome = request.getParameter("empresaNome"); // ex: "Distribuidora LTDA"
+	        if (empresaNome == null || empresaNome.isEmpty()) {
+	            empresaNome = empresaBase; // fallback
+	        }
+
+	        // 🔹 Busca ID da empresa usando DAO
+	        EmpresaDAO empresaDao = new EmpresaDAO(empresaBase);
+	        Integer empresaId = 1;
+	        if (empresaId == null || empresaId == 0) {
+	            empresaId = empresaDao.buscarIdPorNome(empresaNome);
+	            if (empresaId == null || empresaId == 0) {
+	                System.err.println("Erro: ID da empresa não encontrado para " + empresaNome);
+	                response.sendRedirect("erroPagamento.jsp?msg=empresa-id-nao-encontrado");
+	                return;
+	            }
+	            session.setAttribute("empresaId", empresaId);
+	        }
+
+	        // 🔹 ID do usuário
+	        Integer usuarioID = (Integer) session.getAttribute("usuarioID");
+
+	        // 🔹 Coleta de parâmetros do formulário
+	        String idCliStr = request.getParameter("cliId");
+	        String totalVendaStr = request.getParameter("iserirtotal");
+	        String descontoStr = request.getParameter("desconto");
+	        String formaPagamento = request.getParameter("formaPagamento");
+
+	        int idCli = (idCliStr != null && !idCliStr.isEmpty()) ? Integer.parseInt(idCliStr) : 0;
+	        double totalVenda = (totalVendaStr != null && !totalVendaStr.isEmpty()) ? Double.parseDouble(totalVendaStr) : 0.0;
+	        double desconto = (descontoStr != null && !descontoStr.isEmpty()) ? Double.parseDouble(descontoStr) : 0.0;
+
+	        // 🔹 Criação do objeto Vendas
+	        Vendas obj = new Vendas();
+	        if (idCli > 0) {
+	            Clientes objCli = new Clientes();
+	            objCli.setId(idCli);
+	            obj.setCliente(objCli);
+	        }
+	        obj.setData_venda(request.getParameter("data"));
+	        obj.setTotal_venda(totalVenda);
+	        obj.setObs(request.getParameter("observacao"));
+	        obj.setDesconto(desconto);
 	        obj.setFormaPagamento(formaPagamento);
 
-	        // Definir o usuário logado na venda
 	        if (usuarioID != null && usuarioID > 0) {
 	            Usuario objUser = new Usuario();
 	            objUser.setId(usuarioID);
 	            obj.setUsuario(objUser);
 	        }
 
-	        // Inserir venda no banco
-	        VendasDAO dao = new VendasDAO(empresa);
+	        // 🔹 Inserir venda no banco
+	        VendasDAO dao = new VendasDAO(empresaBase);
 	        dao.cadastrarVenda(obj);
-
-	        // Capturar o ID da venda recém-criada
 	        obj.setId(dao.retornaUltimaVenda());
 
-	        // Processar os itens da venda
+	        // 🔹 Processa itens da venda
 	        JSONArray itensArray = (JSONArray) session.getAttribute("itens");
-	        if (itensArray != null) {
+	        if (itensArray != null && itensArray.length() > 0) {
 	            for (int i = 0; i < itensArray.length(); i++) {
 	                JSONObject linha = itensArray.getJSONObject(i);
 
-	                String idProdVenda = linha.getString("idProd");
-	                String qtdProd = linha.getString("qtdProd");
-	                String subItens = linha.getString("subtotal");
+	                int idProdVenda = Integer.parseInt(linha.getString("idProd"));
+	                int qtdProd = Integer.parseInt(linha.getString("qtdProd"));
+	                double subItens = Double.parseDouble(linha.getString("subtotal"));
 
-	                ProdutosDAO dao_produto = new ProdutosDAO(empresa);
-	                itensVendaDAO daoitem = new itensVendaDAO(empresa);
+	                ProdutosDAO dao_produto = new ProdutosDAO(empresaBase);
+	                itensVendaDAO daoitem = new itensVendaDAO(empresaBase);
+
 	                Produtos objp = new Produtos();
 	                ItensVenda itens = new ItensVenda();
 
 	                itens.setVenda(obj);
-	                objp.setId(Integer.parseInt(idProdVenda));
+	                objp.setId(idProdVenda);
 	                itens.setProduto(objp);
-	                itens.setQtd(Integer.parseInt(qtdProd));
-	                itens.setSubtotal(Double.parseDouble(subItens));
+	                itens.setQtd(qtdProd);
+	                itens.setSubtotal(subItens);
 
-	                // Baixa no estoque
+	                // Atualiza estoque
 	                int qtd_estoque = dao_produto.retornaEstoqueAtual(objp.getId());
-	                int qtd_comprada = Integer.parseInt(qtdProd);
-	                int qtd_atualizada = qtd_estoque - qtd_comprada;
+	                dao_produto.baixarEstoque(objp.getId(), qtd_estoque - qtdProd);
 
-	                dao_produto.baixarEstoque(objp.getId(), qtd_atualizada);
-
-	                // Cadastrar o item de venda
+	                // Insere item
 	                daoitem.cadastraItem(itens);
 	            }
 
-	            // Limpar sessão após a venda
-	            session.removeAttribute("totalVendaAtualizado");
-
+	            // 🔹 Limpa sessão de itens e valores
 	            session.removeAttribute("itens");
 	            session.removeAttribute("desconto");
 	            session.removeAttribute("totalVenda");
-
-	            // Adicione logs extras antes e depois de remover o atributo
-	            System.out.println("Antes de remover: " + session.getAttribute("totalVendaAtualizado"));
-
 	            session.removeAttribute("totalVendaAtualizado");
-
-	            System.out.println("Depois de remover: " + session.getAttribute("totalVendaAtualizado"));
-
-
-	            response.sendRedirect("realizarVendas.jsp");
 	        }
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+	        // 🔹 Integração Mercado Pago
+	        if ("MERCADOPAGO".equalsIgnoreCase(formaPagamento)) {
+	            ConfigPagamentoDAO cfgDao = new ConfigPagamentoDAO(empresaBase);
+	            ConfigPagamento cfg = cfgDao.buscarPorEmpresa(empresaId);
 
-	    // Debug
-	    System.out.println("Cliente ID: " + idCli);
-	    System.out.println("Data Venda: " + dataVenda);
-	    System.out.println("Total Venda: " + totalVenda);
-	    System.out.println("Observação: " + Obs);
-	    System.out.println("Desconto: " + desconto);
-	    System.out.println("Forma de Pagamento: " + formaPagamento);
-	    System.out.println("Usuário Logado ID: " + usuarioID);
+	            if (cfg == null || cfg.getAccessToken() == null || cfg.getAccessToken().isEmpty()) {
+	                System.err.println("Erro: Configuração de pagamento inválida para empresaId " + empresaId);
+	                response.sendRedirect("erroPagamento.jsp?msg=access-token-invalido");
+	                return;
+	            }
+
+	            try {
+	                MercadoPagoConfig.setAccessToken(cfg.getAccessToken());
+	                PreferenceClient client = new PreferenceClient();
+
+	                PreferenceItemRequest itemRequest = PreferenceItemRequest.builder()
+	                        .title("Venda #" + obj.getId())
+	                        .quantity(1)
+	                        .unitPrice(new BigDecimal(obj.getTotal_venda()))
+	                        .currencyId("BRL")
+	                        .build();
+
+	                PreferenceRequest prefRequest = PreferenceRequest.builder()
+	                        .items(Collections.singletonList(itemRequest))
+	                        .build();
+
+	                Preference pref = client.create(prefRequest);
+	                response.sendRedirect(pref.getInitPoint());
+	                return;
+
+	            } catch (Exception e) {
+	                System.err.println("Erro na integração com Mercado Pago:");
+	                e.printStackTrace();
+	                response.sendRedirect("erroPagamento.jsp?msg=erro-geral-mp");
+	                return;
+	            }
+	        }
+
+	        // 🔹 Se não for Mercado Pago, redireciona para página de vendas
+	        response.sendRedirect("realizarVendas.jsp");
+
+	    } catch (NumberFormatException e) {
+	        System.err.println("Erro de conversão de número. Verifique os parâmetros.");
+	        e.printStackTrace();
+	        response.sendRedirect("erroPagamento.jsp?msg=formato-numero-invalido");
+	    } catch (Exception e) {
+	        System.err.println("Erro geral no processo de vendas.");
+	        e.printStackTrace();
+	        response.sendRedirect("erroPagamento.jsp?msg=erro-geral");
+	    }
+	    
+	    
 	}
+
 
 	private void inserirItens(HttpServletRequest request, HttpServletResponse response)
 	        throws ServletException, IOException {

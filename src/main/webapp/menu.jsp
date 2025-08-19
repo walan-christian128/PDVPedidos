@@ -1,4 +1,5 @@
 <%@ page import="Model.Empresa" %>
+<%@ page import="Model.ConfigPagamento" %>
 <%@ page import="Model.HorarioFuncionamento" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ArrayList" %>
@@ -27,6 +28,8 @@ if (empresa4 == null || empresa4.isEmpty()) {
     rd.forward(request, response);
     return; // Certifique-se de que o código pare de executar após o redirecionamento
 }
+
+ConfigPagamento pagamentoModal = (ConfigPagamento) request.getAttribute("confgpagamento");
 
 Empresa empresaModal = (Empresa) request.getAttribute("empresa");
 List<HorarioFuncionamento> horariosEmpresaModal = (List<HorarioFuncionamento>) request.getAttribute("horariosEmpresa");
@@ -206,6 +209,9 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
                             <li class="nav-item">
                                 <a class="nav-link" href="#" id="linkAbrirModalEmpresa">Empresa</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="linkAbrirModalPagamento" data-bs-toggle="modal" data-bs-target="#modalCadastropagamento">Configuração de pagamento </a>
+                            </li>
                         </ul>
                     </div>
                 </li>
@@ -367,7 +373,7 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
     
     
 <div class="modal fade" id="modalCadastroempresa" tabindex="-1" aria-labelledby="modalCadastroempresa" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"> <%-- Aumentei o tamanho para modal-lg --%>
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-5" id="modalEmpresaLabel">Dados da Empresa</h1>
@@ -378,10 +384,10 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
                     <form name="cadastroForm" action="atualizaEmpresa" method="post" enctype="multipart/form-data">
                         <input type="hidden" id="idEmpresa" name="idEmpresa" value="<%= empresaModal != null ? empresaModal.getId() : "" %>">
 
+                        <!-- ================= Informações Gerais ================= -->
                         <h4 class="text-secondary mb-4">Informações Gerais</h4>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                 <input type="hidden" id="idEmpresa" name="idEmpresa" value="<%= empresaModal != null ? empresaModal.getId() : "" %>">
                                 <label for="nomeEmpresa" class="form-label">Nome Fantasia da Empresa:</label>
                                 <input type="text" class="form-control" id="nomeEmpresa" name="nomeEmpresa" placeholder="Nome da sua empresa" required
                                        value="<%= empresaModal != null ? empresaModal.getNome() : "" %>">
@@ -409,7 +415,6 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
                                 <% if (empresaModal != null && empresaModal.getLogo() != null && empresaModal.getLogo().length > 0) { %>
                                     <div class="mt-2 text-center">
                                         <p>Logo atual:</p>
-                                        <%-- Base64.getEncoder().encodeToString(empresaModal.getLogo()) converte o array de bytes da logo para uma string Base64 --%>
                                         <img src="data:image/jpeg;base64,<%= Base64.getEncoder().encodeToString(empresaModal.getLogo()) %>"
                                              alt="Logo da Empresa" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 5px;">
                                     </div>
@@ -419,15 +424,45 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
                             </div>
                         </div>
 
+                        <!-- ================= Configuração do Gateway ================= -->
+							<hr class="my-4">
+							<h4 class="text-secondary mb-3">Configuração de Pagamento</h4>
+							<div class="row">
+								<div class="col-md-6 mb-3">
+									<label for="gateway" class="form-label">Gateway:</label> <select
+										class="form-select" id="gateway" name="gateway" required>
+										<option value="">Selecione</option>
+										<option value="mercadopago"
+											<%=(pagamentoModal != null && "mercadopago".equals(pagamentoModal.getGateway())) ? "selected" : ""%>>
+											Mercado Pago</option>
+										<option value="paypal"
+											<%=(pagamentoModal != null && "paypal".equals(pagamentoModal.getGateway())) ? "selected" : ""%>>
+											PayPal</option>
+									</select>
+								</div>
+
+								<div class="col-md-6 mb-3">
+									<label for="clientId" class="form-label">Client ID:</label> <input
+										type="text" class="form-control" id="clientId" name="clientId"
+										value="<%=pagamentoModal != null ? pagamentoModal.getClientId() : ""%>"
+										required>
+								</div>
+
+								<div class="col-md-6 mb-3">
+									<label for="clientSecret" class="form-label">Client
+										Secret:</label> <input type="text" class="form-control"
+										id="clientSecret" name="clientSecret"
+										value="<%=pagamentoModal != null ? pagamentoModal.getClientSecret() : ""%>"
+										required>
+								</div>
+							</div>
+
+							<!-- ================= Horários de Funcionamento ================= -->
                         <hr class="my-4">
-
                         <h4 class="text-secondary mb-3">Horários de Funcionamento</h4>
-                        <%
-                            String[] diasSemana = {"Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"};
-                        %>
-
-                        <% for (int i = 0; i < diasSemana.length; i++) {
-                            // Tenta obter o horário correspondente do mapa. Se não existir, hfAtual será null.
+                        <%-- (mantém exatamente o loop existente dos dias da semana) --%>
+                        <% String[] diasSemana = {"Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"}; %>
+                        <% for (int i = 0; i < diasSemana.length; i++) { 
                             HorarioFuncionamento hfAtual = horariosMap.get(i);
                             boolean isAberto = (hfAtual != null && hfAtual.isAberto());
                             String horaAbertura = (hfAtual != null && hfAtual.getHoraAbertura() != null) ? hfAtual.getHoraAbertura() : "";
@@ -445,19 +480,15 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
                                     <div class="col-md-6 mb-3">
                                         <label for="abertura_<%= i %>" class="form-label">Abertura:</label>
                                         <input type="time" class="form-control" id="abertura_<%= i %>" name="abertura_<%= i %>" value="<%= horaAbertura %>">
-                                        <div class="invalid-feedback">Informe um horário de abertura.</div>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="fechamento_<%= i %>" class="form-label">Fechamento:</label>
                                         <input type="time" class="form-control" id="fechamento_<%= i %>" name="fechamento_<%= i %>" value="<%= horaFechamento %>">
-                                        <div class="invalid-feedback">Informe um horário de fechamento e que seja após a abertura.</div>
                                     </div>
-                                    <%-- Opcional: Campo para observação do horário --%>
                                     <div class="col-12 mb-3">
                                         <label for="observacao_<%= i %>" class="form-label">Observação (opcional):</label>
                                         <input type="text" class="form-control" id="observacao_<%= i %>" name="observacao_<%= i %>"
-                                               value="<%= (hfAtual != null && hfAtual.getObservacao() != null) ? hfAtual.getObservacao() : "" %>"
-                                               placeholder="Ex: Fechado para almoço das 12h às 13h">
+                                               value="<%= (hfAtual != null && hfAtual.getObservacao() != null) ? hfAtual.getObservacao() : "" %>">
                                     </div>
                                 </div>
                             </div>
@@ -472,6 +503,7 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
         </div>
     </div>
 </div>
+
           
     
     <%-- MODAL: Produtos Mais Vendidos por Período --%>
@@ -591,6 +623,65 @@ for (HorarioFuncionamento hf : horariosEmpresaModal) {
             </div>
         </div>
     </div>
+    
+   <div class="modal fade" id="modalCadastropagamento" tabindex="-1" aria-labelledby="modalCadastropagamentoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalCadastropagamentoLabel">Configurações de Pagamento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-center text-muted mb-4">
+                    Configure as credenciais para o seu gateway de pagamento.
+                </p>
+
+                <form action="configpagamento" method="post" class="row g-3">
+
+                    <!-- Gateway de Pagamento -->
+                    <div class="col-12">
+                        <label for="gateway" class="form-label">Gateway de Pagamento</label>
+                        <select id="gateway" name="gateway" class="form-select" required>
+                            <option value="MercadoPago">Mercado Pago</option>
+                            <option value="PayPal">PayPal</option>
+                        </select>
+                    </div>
+
+                    <!-- Chave Pix -->
+                    <div class="col-12">
+                        <label for="chavePix" class="form-label">Chave Pix</label>
+                        <input type="text" id="chavePix" name="chavePix" class="form-control" placeholder="Sua chave Pix">
+                    </div>
+
+                    <!-- Client ID -->
+                    <div class="col-12">
+                        <label for="clientId" class="form-label">Client ID</label>
+                        <input type="text" id="clientId" name="clientId" class="form-control" placeholder="Insira o Client ID do seu gateway" required>
+                    </div>
+
+                    <!-- Client Secret -->
+                    <div class="col-12">
+                        <label for="clientSecret" class="form-label">Client Secret</label>
+                        <input type="password" id="clientSecret" name="clientSecret" class="form-control" placeholder="Insira o Client Secret do seu gateway" required>
+                    </div>
+
+                    <!-- Access Token -->
+                    <div class="col-12">
+                        <label for="accessToken" class="form-label">Access Token</label>
+                        <input type="text" id="accessToken" name="accessToken" class="form-control" placeholder="Insira o Access Token do seu gateway" required>
+                    </div>
+
+                    <!-- Botão de Envio -->
+                    <div class="col-12 d-grid mt-3">
+                        <button type="submit" class="btn btn-primary btn-lg">Salvar Configurações</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
@@ -726,9 +817,21 @@ $(document).ready(function() {
  // Se sim, significa que o Servlet "selecionaEmpresa" foi chamado, e o modal deve abrir.
  <% if (empresaModal != null) { %>
      $('#modalCadastroempresa').modal('show');
+     $('#modalCadastropagamento').modal('show');
      // Opcional: expandir o acordeão "Cadastros" no menu lateral
      $('#collapseCadastros').collapse('show');
+     
+     
  <% } %>
+ 
+ <% if (pagamentoModal != null) { %>
+
+ $('#modalCadastropagamento').modal('show');
+ // Opcional: expandir o acordeão "Cadastros" no menu lateral
+ $('#collapseCadastros').collapse('show');
+ 
+ 
+<% } %>
 
  // 3. Lógica para o link "Empresa" no menu lateral
  // Ao invés de um AJAX que requer manipulação complexa do DOM,
@@ -745,6 +848,8 @@ $(document).ready(function() {
      // Redireciona para o Servlet. O Servlet fará o processamento e o forward para este JSP novamente.
      window.location.href = 'selecionarEmpresa?id=' + idDaEmpresaParaCarregar;
  });
+ 
+
 
  // ... (Mantenha o resto do seu $(document).ready) ...
 });
